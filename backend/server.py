@@ -139,6 +139,8 @@ async def create_tree(tree: TreeCreate):
     # Generate random position on the map
     import random
     tree_id = str(uuid.uuid4())
+    # Convert timestamp to string to avoid serialization issues
+    now = datetime.now().isoformat()
     tree_doc = {
         "id": tree_id,
         "donation_id": tree.donation_id,
@@ -147,7 +149,7 @@ async def create_tree(tree: TreeCreate):
         "type": tree.type,
         "x": random.uniform(50, 950),  # Random X position
         "y": random.uniform(50, 550),  # Random Y position
-        "timestamp": datetime.now()
+        "timestamp": now
     }
     await db.trees.insert_one(tree_doc)
     return tree_doc
