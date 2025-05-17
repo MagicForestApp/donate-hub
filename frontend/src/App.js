@@ -912,11 +912,13 @@ const ThankYouPage = () => {
     try {
       // Create tree data
       const treeData = {
-        donationId,
+        donation_id: donationId,
         donor: formData.name,
         message: formData.message,
         type: formData.treeType,
       };
+      
+      console.log('Sending tree data:', treeData);
       
       // POST to create tree
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/trees`, {
