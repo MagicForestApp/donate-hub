@@ -437,15 +437,23 @@ const ForestMap = () => {
     // Fetch trees from backend
     const fetchTrees = async () => {
       try {
+        console.log('Fetching trees from API...');
         const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/trees`);
         if (response.ok) {
           const data = await response.json();
-          setTrees(data || getMockTrees());
+          console.log('Trees from API:', data);
+          if (data && data.length > 0) {
+            setTrees(data);
+          } else {
+            console.log('No trees found, using mock data');
+            setTrees(getMockTrees());
+          }
         } else {
+          console.error('Error response from API:', response.status);
           setTrees(getMockTrees());
         }
       } catch (error) {
-        console.error('Error fetching trees:', error);
+        console.error('Exception fetching trees:', error);
         setTrees(getMockTrees());
       }
     };
