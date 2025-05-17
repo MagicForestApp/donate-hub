@@ -77,7 +77,7 @@ class Donation(DonationBase):
     timestamp: datetime
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class TreeBase(BaseModel):
     donation_id: str
