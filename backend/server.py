@@ -1,75 +1,219 @@
-from fastapi import FastAPI, APIRouter
-from dotenv import load_dotenv
-from starlette.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
-import os
-import logging
-from pathlib import Path
+from fastapi import FastAPI, HTTPException, Depends, Body
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from typing import List
-import uuid
 from datetime import datetime
+from typing import Optional, List, Dict, Any
+import os
+import uuid
+import stripe
+from motor.motor_asyncio import AsyncIOMotorClient
 
+# Initialize FastAPI app
+app = FastAPI(title="The Magic Forest API")
 
-ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env')
-
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
-
-# Create the main app without a prefix
-app = FastAPI()
-
-# Create a router with the /api prefix
-api_router = APIRouter(prefix="/api")
-
-
-# Define Models
-class StatusCheck(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
-
-class StatusCheckCreate(BaseModel):
-    client_name: str
-
-# Add your routes to the router instead of directly to app
-@api_router.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.dict()
-    status_obj = StatusCheck(**status_dict)
-    _ = await db.status_checks.insert_one(status_obj.dict())
-    return status_obj
-
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    status_checks = await db.status_checks.find().to_list(1000)
-    return [StatusCheck(**status_check) for status_check in status_checks]
-
-# Include the router in the main app
-app.include_router(api_router)
-
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins in development
     allow_credentials=True,
-    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+# Get MongoDB connection string from environment variable
+MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
 
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
+# Connect to MongoDB
+client = AsyncIOMotorClient(MONGO_URL)
+db = client.magic_forest_db
+
+# Initialize Stripe
+# In a production environment, store the key in .env file
+stripe.api_key = "sk_test_your_stripe_key"  # Replace with your Stripe test key
+
+# Tree threshold - minimum donation amount to create a tree
+TREE_THRESHOLD = 10
+
+# --------------------------
+# Models
+# --------------------------
+
+class DonationBase(BaseModel):
+    type: str  # "one-time" or "recurring"
+    amount: float
+    plan: Optional[str] = None  # "seedling", "guardian", "ranger" for recurring donations
+
+class DonationCreate(DonationBase):
+    pass
+
+class Donation(DonationBase):
+    id: str
+    timestamp: datetime
+    
+    class Config:
+        orm_mode = True
+
+class TreeBase(BaseModel):
+    donation_id: str
+    donor: str
+    message: str
+    type: str  # "pine", "oak", "birch", "sequoia", etc.
+
+class TreeCreate(TreeBase):
+    pass
+
+class Tree(TreeBase):
+    id: str
+    x: float  # X coordinate on the map
+    y: float  # Y coordinate on the map
+    timestamp: datetime
+    
+    class Config:
+        orm_mode = True
+
+# --------------------------
+# Database functions
+# --------------------------
+
+# Get total donations
+async def get_total_donations():
+    pipeline = [
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]
+    result = await db.donations.aggregate(pipeline).to_list(length=1)
+    return result[0]["total"] if result else 0
+
+# Get donation by ID
+async def get_donation(donation_id: str):
+    donation = await db.donations.find_one({"id": donation_id})
+    return donation
+
+# Create a new donation
+async def create_donation(donation: DonationCreate):
+    donation_id = str(uuid.uuid4())
+    donation_doc = {
+        "id": donation_id,
+        "type": donation.type,
+        "amount": donation.amount,
+        "plan": donation.plan,
+        "timestamp": datetime.now()
+    }
+    await db.donations.insert_one(donation_doc)
+    return {"id": donation_id, **donation_doc}
+
+# Get all trees
+async def get_trees():
+    trees = await db.trees.find().to_list(length=100)
+    return trees
+
+# Create a new tree
+async def create_tree(tree: TreeCreate):
+    # Generate random position on the map
+    import random
+    tree_id = str(uuid.uuid4())
+    tree_doc = {
+        "id": tree_id,
+        "donation_id": tree.donation_id,
+        "donor": tree.donor,
+        "message": tree.message,
+        "type": tree.type,
+        "x": random.uniform(50, 950),  # Random X position
+        "y": random.uniform(50, 550),  # Random Y position
+        "timestamp": datetime.now()
+    }
+    await db.trees.insert_one(tree_doc)
+    return tree_doc
+
+# --------------------------
+# API Routes
+# --------------------------
+
+@app.get("/api/health")
+async def health_check():
+    return {"status": "ok", "timestamp": datetime.now().isoformat()}
+
+@app.get("/api/total-donations")
+async def total_donations():
+    total = await get_total_donations()
+    return {"total": total}
+
+@app.post("/api/donations", response_model=Dict[str, Any])
+async def create_donation_endpoint(donation: DonationCreate):
+    result = await create_donation(donation)
+    return result
+
+@app.get("/api/donations/{donation_id}")
+async def get_donation_endpoint(donation_id: str):
+    donation = await get_donation(donation_id)
+    if not donation:
+        raise HTTPException(status_code=404, detail="Donation not found")
+    return donation
+
+@app.get("/api/trees")
+async def get_trees_endpoint():
+    trees = await get_trees()
+    return trees
+
+@app.post("/api/trees", response_model=Dict[str, Any])
+async def create_tree_endpoint(tree: TreeCreate):
+    # Check if the donation exists and meets the threshold
+    donation = await get_donation(tree.donation_id)
+    if not donation:
+        raise HTTPException(status_code=404, detail="Donation not found")
+    
+    # Check if donation amount meets threshold or is a recurring donation
+    if donation["type"] == "recurring" or donation["amount"] >= TREE_THRESHOLD:
+        result = await create_tree(tree)
+        return result
+    else:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Donation amount must be at least ${TREE_THRESHOLD} to plant a tree"
+        )
+
+# --------------------------
+# Stripe payment endpoints
+# --------------------------
+
+@app.post("/api/create-payment-intent")
+async def create_payment_intent(data: Dict[str, Any] = Body(...)):
+    try:
+        amount = int(data["amount"] * 100)  # Convert to cents
+        
+        # Create a PaymentIntent with the order amount and currency
+        intent = stripe.PaymentIntent.create(
+            amount=amount,
+            currency="usd",
+            automatic_payment_methods={
+                "enabled": True,
+            },
+        )
+        
+        return {"clientSecret": intent["client_secret"]}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/create-subscription")
+async def create_subscription(data: Dict[str, Any] = Body(...)):
+    try:
+        # Get plan price based on tier
+        plan = data["plan"]
+        price_id = ""
+        
+        # In a real app, these would be actual Stripe price IDs
+        if plan == "seedling":
+            price_id = "price_seedling"
+        elif plan == "guardian":
+            price_id = "price_guardian"
+        elif plan == "ranger":
+            price_id = "price_ranger"
+        else:
+            raise HTTPException(status_code=400, detail="Invalid plan")
+        
+        # Create a subscription
+        # Note: In a real implementation, you would create a customer and subscribe them
+        # This is a simplified version
+        
+        return {"success": True, "message": "Subscription created successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
