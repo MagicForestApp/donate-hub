@@ -930,14 +930,18 @@ const ThankYouPage = () => {
       });
       
       if (response.ok) {
+        const result = await response.json();
+        console.log('Tree created successfully:', result);
         // Redirect to forest map
         navigate('/forest');
       } else {
-        // If error, still redirect for demo purposes
+        // If error, log and still redirect for demo purposes
+        const errorText = await response.text();
+        console.error('Error creating tree:', response.status, errorText);
         navigate('/forest');
       }
     } catch (error) {
-      console.error('Error creating tree:', error);
+      console.error('Exception creating tree:', error);
       // If error, still redirect for demo purposes
       navigate('/forest');
     }
