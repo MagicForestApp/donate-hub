@@ -166,7 +166,7 @@ async def total_donations():
 @app.post("/api/donations", response_model=Dict[str, Any])
 async def create_donation_endpoint(donation: DonationCreate):
     result = await create_donation(donation)
-    return result
+    return mongo_to_json(result)
 
 @app.get("/api/donations/{donation_id}")
 async def get_donation_endpoint(donation_id: str):
