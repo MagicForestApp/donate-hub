@@ -173,12 +173,12 @@ async def get_donation_endpoint(donation_id: str):
     donation = await get_donation(donation_id)
     if not donation:
         raise HTTPException(status_code=404, detail="Donation not found")
-    return donation
+    return mongo_to_json(donation)
 
 @app.get("/api/trees")
 async def get_trees_endpoint():
     trees = await get_trees()
-    return trees
+    return mongo_to_json(trees)
 
 @app.post("/api/trees", response_model=Dict[str, Any])
 async def create_tree_endpoint(tree: TreeCreate):
