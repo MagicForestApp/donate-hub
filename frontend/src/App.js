@@ -226,10 +226,17 @@ const DonationPage = () => {
       
       if (response.ok) {
         const result = await response.json();
+        // Log the response for debugging
+        console.log('Donation response:', result);
+        // Use the id from the response
         navigate(`/thank-you?donationId=${result.id}`);
       } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Failed to process donation');
+        try {
+          const errorData = await response.json();
+          setError(errorData.detail || 'Failed to process donation');
+        } catch (e) {
+          setError('Failed to process donation');
+        }
       }
     } catch (error) {
       setError('An error occurred while processing your donation');
