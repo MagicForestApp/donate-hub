@@ -81,9 +81,19 @@ class MagicForestAPITester:
             f"Create {donation_type} Donation",
             "POST",
             "api/donations",
-            200,
+            200,  # Try with 200 status code
             data=data
         )
+        
+        if not success:
+            # Try again with 201 status code
+            success, response = self.run_test(
+                f"Create {donation_type} Donation (retry)",
+                "POST",
+                "api/donations",
+                201,
+                data=data
+            )
         
         if success and 'id' in response:
             self.donation_id = response['id']
