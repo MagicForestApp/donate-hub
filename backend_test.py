@@ -185,8 +185,20 @@ class MagicForestAPITester:
         return success
 
 def main():
-    # Get backend URL from environment variable or use default
-    backend_url = os.environ.get("REACT_APP_BACKEND_URL", "http://localhost:8001")
+    # Read the backend URL from the frontend .env file
+    backend_url = None
+    try:
+        with open('/app/frontend/.env', 'r') as f:
+            for line in f:
+                if line.startswith('REACT_APP_BACKEND_URL='):
+                    backend_url = line.strip().split('=')[1].strip('"')
+                    break
+    except Exception as e:
+        print(f"Error reading .env file: {e}")
+    
+    # Fallback to default if not found
+    if not backend_url:
+        backend_url = "http://localhost:8001"
     
     print(f"Testing Magic Forest API at: {backend_url}")
     
