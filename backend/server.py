@@ -117,15 +117,17 @@ async def get_donation(donation_id: str):
 # Create a new donation
 async def create_donation(donation: DonationCreate):
     donation_id = str(uuid.uuid4())
+    # Convert timestamp to string to avoid serialization issues
+    now = datetime.now().isoformat()
     donation_doc = {
         "id": donation_id,
         "type": donation.type,
         "amount": donation.amount,
         "plan": donation.plan,
-        "timestamp": datetime.now()
+        "timestamp": now
     }
     await db.donations.insert_one(donation_doc)
-    return {"id": donation_id, **donation_doc}
+    return donation_doc
 
 # Get all trees
 async def get_trees():
