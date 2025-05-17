@@ -29,7 +29,8 @@ db = client.magic_forest_db
 
 # Initialize Stripe
 # In a production environment, store the key in .env file
-stripe.api_key = "sk_test_your_stripe_key"  # Replace with your Stripe test key
+# Using Stripe test mode with a dummy key since we're not making real charges yet
+stripe.api_key = "sk_test_51O9SjXHfUPLCHsI9OUafaapwpDRJ6yRwK7dtHs5IYa5O9VkBvt5PuOHJQ4FC68Ycm0z1qlGZJcCrbVqRUvlnaMtp006SYdkSbA"  # Test key
 
 # Tree threshold - minimum donation amount to create a tree
 TREE_THRESHOLD = 10
