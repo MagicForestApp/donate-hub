@@ -190,7 +190,7 @@ async def create_tree_endpoint(tree: TreeCreate):
     # Check if donation amount meets threshold or is a recurring donation
     if donation["type"] == "recurring" or donation["amount"] >= TREE_THRESHOLD:
         result = await create_tree(tree)
-        return result
+        return mongo_to_json(result)
     else:
         raise HTTPException(
             status_code=400, 
