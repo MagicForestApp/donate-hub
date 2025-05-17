@@ -6,7 +6,32 @@ from typing import Optional, List, Dict, Any
 import os
 import uuid
 import stripe
+import json
+from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorClient
+
+# JSON encoder to handle MongoDB ObjectId and datetime
+class MongoJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, ObjectId):
+            return str(obj)
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().default(obj)
+
+# Helper function to convert MongoDB documents to JSON-serializable format
+def mongo_to_json(doc):
+    if doc is None:
+        return None
+    if isinstance(doc, list):
+        return [mongo_to_json(item) for item in doc]
+    if isinstance(doc, dict):
+        return {k: mongo_to_json(v) for k, v in doc.items()}
+    if isinstance(doc, ObjectId):
+        return str(doc)
+    if isinstance(doc, datetime):
+        return doc.isoformat()
+    return doc
 
 # Initialize FastAPI app
 app = FastAPI(title="The Magic Forest API")
