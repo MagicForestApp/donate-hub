@@ -5,15 +5,7 @@ import { FaTree, FaSeedling, FaShieldAlt, FaUserAstronaut, FaArrowRight } from '
 import { BiDonateHeart } from 'react-icons/bi';
 import './App.css';
 
-// Component imports
-import HomePage from './components/HomePage';
-import DonationPage from './components/DonationPage';
-import ForestMap from './components/ForestMap';
-import Roadmap from './components/Roadmap';
-import UserAccount from './components/UserAccount';
-import ThankYouPage from './components/ThankYouPage';
-
-// Create the components that are imported above
+// Component definitions
 const HomePage = () => {
   const navigate = useNavigate();
   const [currentAmount, setCurrentAmount] = useState(12000);
