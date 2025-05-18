@@ -213,41 +213,141 @@ async def create_tree_endpoint(tree: TreeCreate):
 async def create_payment_intent(data: Dict[str, Any] = Body(...)):
     try:
         amount = int(data["amount"] * 100)  # Convert to cents
+        metadata = {
+            "donation_type": "one-time",
+            "customer_email": data.get("email", ""),
+            "application": "magic_forest"
+        }
         
         # Create a PaymentIntent with the order amount and currency
         intent = stripe.PaymentIntent.create(
             amount=amount,
             currency="usd",
+            metadata=metadata,
             automatic_payment_methods={
                 "enabled": True,
             },
+            description="Magic Forest Donation",
         )
         
-        return {"clientSecret": intent["client_secret"]}
+        return {
+            "clientSecret": intent["client_secret"],
+            "publishableKey": os.environ.get("STRIPE_PUBLISHABLE_KEY"),
+            "isTestMode": STRIPE_MODE == "test"
+        }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/api/create-subscription")
 async def create_subscription(data: Dict[str, Any] = Body(...)):
     try:
-        # Get plan price based on tier
+        # Get plan details
         plan = data["plan"]
-        price_id = ""
+        email = data.get("email", "")
         
-        # In a real app, these would be actual Stripe price IDs
+        # Set price based on plan
+        price_amount = 0
         if plan == "seedling":
-            price_id = "price_seedling"
+            price_amount = 500  # $5.00
         elif plan == "guardian":
-            price_id = "price_guardian"
+            price_amount = 1500  # $15.00
         elif plan == "ranger":
-            price_id = "price_ranger"
+            price_amount = 3000  # $30.00
         else:
             raise HTTPException(status_code=400, detail="Invalid plan")
+            
+        # Create a checkout session
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=["card", "apple_pay", "google_pay"],
+            line_items=[{
+                "price_data": {
+                    "currency": "usd",
+                    "product_data": {
+                        "name": f"Magic Forest {plan.capitalize()} Plan",
+                        "description": f"Monthly donation to Magic Forest - {plan.capitalize()} tier",
+                    },
+                    "unit_amount": price_amount,
+                    "recurring": {
+                        "interval": "month"
+                    }
+                },
+                "quantity": 1,
+            }],
+            mode="subscription",
+            success_url=f"{FRONTEND_URL}/confirmation?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{FRONTEND_URL}/donate",
+            customer_email=email if email else None,
+            metadata={
+                "donation_type": "recurring",
+                "plan": plan,
+                "application": "magic_forest"
+            }
+        )
         
-        # Create a subscription
-        # Note: In a real implementation, you would create a customer and subscribe them
-        # This is a simplified version
+        return {"url": checkout_session.url, "sessionId": checkout_session.id}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/create-checkout-session")
+async def create_checkout_session(data: Dict[str, Any] = Body(...)):
+    try:
+        amount = int(data["amount"] * 100)  # Convert to cents
+        email = data.get("email", "")
         
-        return {"success": True, "message": "Subscription created successfully"}
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=["card", "apple_pay", "google_pay"],
+            line_items=[{
+                "price_data": {
+                    "currency": "usd",
+                    "product_data": {
+                        "name": "Magic Forest Donation",
+                        "description": "One-time donation to support The Magic Forest",
+                    },
+                    "unit_amount": amount,
+                },
+                "quantity": 1,
+            }],
+            mode="payment",
+            success_url=f"{FRONTEND_URL}/confirmation?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{FRONTEND_URL}/donate",
+            customer_email=email if email else None,
+            metadata={
+                "donation_type": "one-time",
+                "amount": data["amount"],
+                "application": "magic_forest"
+            }
+        )
+        
+        return {"url": checkout_session.url, "sessionId": checkout_session.id}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/api/checkout-session/{session_id}")
+async def get_checkout_session(session_id: str):
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+        
+        # Create a donation record based on the successful checkout
+        donation_data = {
+            "type": session.metadata.get("donation_type", "one-time"),
+            "amount": float(session.metadata.get("amount", "0")),
+            "plan": session.metadata.get("plan"),
+            "email": session.customer_details.email if hasattr(session, "customer_details") else None,
+            "payment_status": session.payment_status,
+            "session_id": session_id
+        }
+        
+        # Create donation in our database
+        donation = await create_donation(DonationCreate(**donation_data))
+        
+        return {
+            "status": session.status,
+            "payment_status": session.payment_status,
+            "donation_id": donation["id"],
+            "customer_email": donation_data["email"],
+            "amount": donation_data["amount"],
+            "donation_type": donation_data["type"],
+            "plan": donation_data["plan"]
+        }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
