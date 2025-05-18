@@ -485,9 +485,6 @@ const DonationPage = () => {
               stripe={stripePromise} 
               options={{ 
                 clientSecret: clientSecret,
-                mode: 'payment',
-                amount: amount * 100, // in cents
-                currency: 'usd',
                 appearance: {
                   theme: 'night',
                   variables: {
@@ -499,12 +496,6 @@ const DonationPage = () => {
                     spacingUnit: '4px',
                     borderRadius: '8px',
                   },
-                },
-                // Disable Link autofill methods
-                wallets: {
-                  applePay: 'auto',
-                  googlePay: 'auto',
-                  link: 'never'
                 }
               }}
             >
