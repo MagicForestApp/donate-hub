@@ -1394,17 +1394,14 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', clientSecret, on
         return;
       }
       
-      const { error, paymentIntent } = await stripe.confirmCardPayment(
-        clientSecret,
-        {
-          payment_method: {
-            card: cardElement,
-            billing_details: {
-              email: email,
-            },
+      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardElement,
+          billing_details: {
+            email: email,
           },
-        }
-      );
+        },
+      });
       
       if (error) {
         setErrorMessage(error.message);
