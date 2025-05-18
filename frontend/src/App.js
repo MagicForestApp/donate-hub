@@ -228,8 +228,8 @@ const DonationPage = () => {
         const result = await response.json();
         // Log the response for debugging
         console.log('Donation response:', result);
-        // Use the id from the response
-        navigate(`/thank-you?donationId=${result.id}`);
+        // Navigate to confirmation page instead of thank-you
+        navigate(`/confirmation?donationId=${result.id}`);
       } else {
         try {
           const errorData = await response.json();
