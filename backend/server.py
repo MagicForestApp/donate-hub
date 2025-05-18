@@ -54,8 +54,10 @@ db = client.magic_forest_db
 
 # Initialize Stripe
 # In a production environment, store the key in .env file
-# Using Stripe test mode with a dummy key since we're not making real charges yet
-stripe.api_key = "sk_test_51O9SjXHfUPLCHsI9OUafaapwpDRJ6yRwK7dtHs5IYa5O9VkBvt5PuOHJQ4FC68Ycm0z1qlGZJcCrbVqRUvlnaMtp006SYdkSbA"  # Test key
+# Initialize Stripe with the secret key from environment variables
+stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "sk_test_51O9SjXHfUPLCHsI9OUafaapwpDRJ6yRwK7dtHs5IYa5O9VkBvt5PuOHJQ4FC68Ycm0z1qlGZJcCrbVqRUvlnaMtp006SYdkSbA")
+STRIPE_MODE = os.environ.get("STRIPE_MODE", "test")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 
 # Tree threshold - minimum donation amount to create a tree
 TREE_THRESHOLD = 10
