@@ -486,6 +486,8 @@ const DonationPage = () => {
               options={{ 
                 clientSecret: clientSecret,
                 mode: 'payment',
+                amount: amount * 100, // in cents
+                currency: 'usd',
                 appearance: {
                   theme: 'night',
                   variables: {
@@ -498,8 +500,7 @@ const DonationPage = () => {
                     borderRadius: '8px',
                   },
                 },
-                // Disable Link autofill
-                payment_method_configuration: 'off_session',
+                // Disable Link autofill methods
                 wallets: {
                   applePay: 'auto',
                   googlePay: 'auto',
