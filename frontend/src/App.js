@@ -523,85 +523,88 @@ const ForestMap = () => {
             <p className="text-gray-300 mb-6">Be the first to plant a tree!</p>
           </div>
         ) : (
-          <svg width="100%" height={mapHeight} viewBox={`0 0 ${mapWidth} ${mapHeight}`} className="mx-auto">
-            {/* Background grid */}
-          {Array.from({ length: 10 }).map((_, i) => (
-            <line 
-              key={`grid-h-${i}`} 
-              x1="0" 
-              y1={i * (mapHeight / 10)} 
-              x2={mapWidth} 
-              y2={i * (mapHeight / 10)}
-              stroke="#ffffff10"
-              strokeWidth="1"
-            />
-          ))}
-          {Array.from({ length: 10 }).map((_, i) => (
-            <line 
-              key={`grid-v-${i}`} 
-              x1={i * (mapWidth / 10)} 
-              y1="0" 
-              x2={i * (mapWidth / 10)} 
-              y2={mapHeight}
-              stroke="#ffffff10"
-              strokeWidth="1"
-            />
-          ))}
-          
-          {trees.map((tree) => (
-            <g 
-              key={tree.id} 
-              transform={`translate(${tree.x}, ${tree.y}) scale(${tree.size})`}
-              className="cursor-pointer transition-transform hover:scale-110"
-              onClick={() => setSelectedTree(tree)}
-            >
-              {/* Tree trunk */}
-              <rect 
-                x="10" 
-                y="35" 
-                width="10" 
-                height="20" 
-                fill="#8B4513" 
-              />
-              
-              {/* Tree foliage (triangle for pine, circle for others) */}
-              {tree.type === 'pine' ? (
-                <>
-                  <polygon 
-                    points="0,35 30,35 15,10" 
-                    fill={getTreeColor(tree.type)} 
-                  />
-                  <polygon 
-                    points="5,25 25,25 15,5" 
-                    fill={getTreeColor(tree.type)} 
-                  />
-                </>
-              ) : (
-                <circle 
-                  cx="15" 
-                  cy="20" 
-                  r="15" 
-                  fill={getTreeColor(tree.type)} 
+          <>
+            <svg width="100%" height={mapHeight} viewBox={`0 0 ${mapWidth} ${mapHeight}`} className="mx-auto">
+              {/* Background grid */}
+              {Array.from({ length: 10 }).map((_, i) => (
+                <line 
+                  key={`grid-h-${i}`} 
+                  x1="0" 
+                  y1={i * (mapHeight / 10)} 
+                  x2={mapWidth} 
+                  y2={i * (mapHeight / 10)}
+                  stroke="#ffffff10"
+                  strokeWidth="1"
                 />
-              )}
-            </g>
-          ))}
-        </svg>
-        
-        {selectedTree && (
-          <div className="absolute right-4 top-4 w-72 bg-night-800/95 backdrop-blur-sm p-4 rounded-lg border border-night-700 shadow-xl">
-            <button 
-              className="absolute top-2 right-2 text-gray-400 hover:text-white"
-              onClick={() => setSelectedTree(null)}
-            >
-              ✕
-            </button>
-            <h3 className="font-semibold text-lg">{selectedTree.donor}&apos;s {selectedTree.type.charAt(0).toUpperCase() + selectedTree.type.slice(1)}</h3>
-            <p className="text-gray-300 mt-2">{selectedTree.message}</p>
-            <div className="mt-3 pt-3 border-t border-night-600 text-sm text-gray-400">
-              Planted on {new Date().toLocaleDateString()}
-            </div>
-          </div>
+              ))}
+              {Array.from({ length: 10 }).map((_, i) => (
+                <line 
+                  key={`grid-v-${i}`} 
+                  x1={i * (mapWidth / 10)} 
+                  y1="0" 
+                  x2={i * (mapWidth / 10)} 
+                  y2={mapHeight}
+                  stroke="#ffffff10"
+                  strokeWidth="1"
+                />
+              ))}
+              
+              {trees.map((tree) => (
+                <g 
+                  key={tree.id} 
+                  transform={`translate(${tree.x}, ${tree.y}) scale(${tree.size})`}
+                  className="cursor-pointer transition-transform hover:scale-110"
+                  onClick={() => setSelectedTree(tree)}
+                >
+                  {/* Tree trunk */}
+                  <rect 
+                    x="10" 
+                    y="35" 
+                    width="10" 
+                    height="20" 
+                    fill="#8B4513" 
+                  />
+                  
+                  {/* Tree foliage (triangle for pine, circle for others) */}
+                  {tree.type === 'pine' ? (
+                    <>
+                      <polygon 
+                        points="0,35 30,35 15,10" 
+                        fill={getTreeColor(tree.type)} 
+                      />
+                      <polygon 
+                        points="5,25 25,25 15,5" 
+                        fill={getTreeColor(tree.type)} 
+                      />
+                    </>
+                  ) : (
+                    <circle 
+                      cx="15" 
+                      cy="20" 
+                      r="15" 
+                      fill={getTreeColor(tree.type)} 
+                    />
+                  )}
+                </g>
+              ))}
+            </svg>
+            
+            {selectedTree && (
+              <div className="absolute right-4 top-4 w-72 bg-night-800/95 backdrop-blur-sm p-4 rounded-lg border border-night-700 shadow-xl">
+                <button 
+                  className="absolute top-2 right-2 text-gray-400 hover:text-white"
+                  onClick={() => setSelectedTree(null)}
+                >
+                  ✕
+                </button>
+                <h3 className="font-semibold text-lg">{selectedTree.donor}&apos;s {selectedTree.type.charAt(0).toUpperCase() + selectedTree.type.slice(1)}</h3>
+                <p className="text-gray-300 mt-2">{selectedTree.message}</p>
+                <div className="mt-3 pt-3 border-t border-night-600 text-sm text-gray-400">
+                  Planted on {new Date().toLocaleDateString()}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
