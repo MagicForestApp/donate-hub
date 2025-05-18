@@ -423,14 +423,14 @@ async def create_checkout_session(data: Dict[str, Any] = Body(...)):
             if test_mode:
                 # Create a donation record for demo purposes
                 donation_id = str(uuid.uuid4())
-                donation_data = {
-                    "id": donation_id,
+                donation_dict = {
                     "type": "one-time",
                     "amount": data["amount"],
                     "email": email,
                     "payment_status": "succeeded",
                     "session_id": f"demo_{donation_id}"
                 }
+                donation_data = {**donation_dict, "id": donation_id}
                 donation = await create_donation(DonationCreate(**donation_data))
                 
                 return {
