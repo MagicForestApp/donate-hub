@@ -254,17 +254,10 @@ const DonationPage = () => {
           <h1 className="text-3xl font-bold mb-6 text-center">Support The Magic Forest</h1>
           
           {isTestMode && (
-            <div className="mb-4 p-3 bg-yellow-900/30 border border-yellow-800 rounded-lg text-yellow-200 text-sm">
-              <p className="font-semibold mb-1">⚠️ Demo Mode</p>
-              <p className="mb-2">This is running in test mode. No real payments will be processed.</p>
-              <details>
-                <summary className="cursor-pointer font-medium">Test Card Numbers</summary>
-                <div className="mt-2 pl-3 border-l-2 border-yellow-800">
-                  <p className="mb-1"><code className="bg-yellow-900/50 px-1 py-0.5 rounded">4242 4242 4242 4242</code> - Succeeds</p>
-                  <p className="mb-1"><code className="bg-yellow-900/50 px-1 py-0.5 rounded">4000 0000 0000 0002</code> - Declines</p>
-                  <p className="mb-1">Use any future date for expiry and any 3 digits for CVC</p>
-                </div>
-              </details>
+            <div className="mb-4 text-center">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-900/30 text-yellow-200 border border-yellow-800/50">
+                <span className="mr-1">🧪</span> Test Mode • No real payments
+              </span>
             </div>
           )}
           
