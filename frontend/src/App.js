@@ -492,6 +492,13 @@ const DonationPage = () => {
                     spacingUnit: '4px',
                     borderRadius: '8px',
                   },
+                },
+                // Disable Link autofill
+                payment_method_configuration: 'off_session',
+                wallets: {
+                  applePay: 'auto',
+                  googlePay: 'auto',
+                  link: 'never'
                 }
               }}
             >
