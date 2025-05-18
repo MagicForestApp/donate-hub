@@ -1491,17 +1491,6 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', clientSecret, on
       }
       
       paymentResult = paymentIntent;
-    } else {
-      // For Apple Pay and Google Pay, we'd handle payment confirmation differently
-      // This is a simplified example - in production, you'd handle this flow properly
-      if (isTestMode) {
-        // In test mode, simulate a successful payment
-        paymentResult = { id: `demo-${Date.now()}`, status: 'succeeded' };
-      } else {
-        setErrorMessage('Payment method not implemented in this demo.');
-        setIsLoading(false);
-        return;
-      }
     }
 
     if (paymentResult && paymentResult.status === 'succeeded') {
