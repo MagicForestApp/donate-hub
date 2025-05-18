@@ -232,9 +232,43 @@ const DonationPage = () => {
       setCheckoutStep('subscription');
       setIsProcessing(false);
     } else {
-      // For one-time donations, show the external checkout
-      setCheckoutStep('external');
-      setIsProcessing(false);
+      // For one-time donations, create a payment intent and show inline form
+      try {
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/create-payment-intent`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            amount: amount,
+            email: email
+          }),
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setClientSecret(data.clientSecret);
+          setCheckoutStep('payment');
+        } else {
+          // For demo purposes with invalid test keys, show external checkout instead
+          setCheckoutStep('external');
+          
+          // In production, you would handle the error:
+          try {
+            const errorData = await response.json();
+            setError(errorData.detail || 'Failed to initialize payment');
+          } catch (e) {
+            setError('Failed to initialize payment');
+          }
+        }
+      } catch (error) {
+        console.error('Payment init error:', error);
+        // For demo purposes with invalid test keys, show external checkout instead
+        setCheckoutStep('external');
+        setError('An error occurred while initializing payment');
+      } finally {
+        setIsProcessing(false);
+      }
     }
   };
   
