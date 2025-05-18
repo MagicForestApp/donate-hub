@@ -1624,7 +1624,7 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', clientSecret, on
             </div>
           </button>
           
-          {walletPaymentSupported && walletDetectionComplete && (
+          {(walletPaymentSupported || (isTestMode && !walletDetectionComplete)) && (
             <button
               type="button"
               className={`px-4 py-2 -mb-px text-sm font-medium ${
@@ -1632,18 +1632,28 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', clientSecret, on
                   ? 'text-primary-400 border-b-2 border-primary-400' 
                   : 'text-gray-400 hover:text-gray-300'
               }`}
-              onClick={() => setPaymentMethod('wallet')}
+              onClick={() => {
+                setPaymentMethod('wallet');
+                // If we're in test mode and no wallet type was detected yet, pick one for testing
+                if (isTestMode && !detectedWalletType) {
+                  // Alternate between Apple Pay and Google Pay for better testing
+                  const testWallet = Math.random() > 0.5 ? 'apple_pay' : 'google_pay';
+                  console.log(`[TEST MODE] Setting test wallet type to: ${testWallet}`);
+                  setDetectedWalletType(testWallet);
+                  setWalletPaymentSupported(true);
+                }
+              }}
             >
               <div className="flex items-center">
                 {detectedWalletType === 'apple_pay' ? (
                   <>
                     <FaApple className="mr-2" />
-                    Apple Pay
+                    Apple Pay {isTestMode && <span className="ml-1 text-xs">(Test)</span>}
                   </>
                 ) : (
                   <>
                     <FaGooglePay className="mr-2" />
-                    Google Pay
+                    Google Pay {isTestMode && <span className="ml-1 text-xs">(Test)</span>}
                   </>
                 )}
               </div>
