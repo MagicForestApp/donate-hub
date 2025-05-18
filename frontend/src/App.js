@@ -1662,24 +1662,100 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', clientSecret, on
               </div>
             )}
           </div>
-        ) : paymentMethod === 'wallet' && paymentRequest ? (
+        ) : paymentMethod === 'wallet' ? (
           <div className="p-4 text-center">
-            <div className="bg-night-800 rounded-lg p-2 inline-block">
-              <PaymentRequestButtonElement
-                options={{
-                  paymentRequest,
-                  style: {
-                    paymentRequestButton: {
-                      theme: 'dark',
-                      height: '48px',
-                      type: 'donate',
+            {paymentRequest ? (
+              <div className="bg-night-800 rounded-lg p-2 inline-block">
+                <PaymentRequestButtonElement
+                  options={{
+                    paymentRequest,
+                    style: {
+                      paymentRequestButton: {
+                        theme: 'dark',
+                        height: '48px',
+                        type: 'donate',
+                      },
                     },
-                  },
+                  }}
+                />
+              </div>
+            ) : isTestMode && SIMULATE_WALLET_SUPPORT ? (
+              // Simulated wallet button for test mode
+              <button
+                type="button"
+                className={`w-full py-3 px-4 rounded-md text-white font-medium flex items-center justify-center ${
+                  detectedWalletType === 'apple_pay' 
+                    ? 'bg-black hover:bg-gray-900' 
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+                onClick={async () => {
+                  setIsLoading(true);
+                  console.log('[TEST MODE] Simulating wallet payment submission');
+                  
+                  // Simulate processing delay
+                  await new Promise(resolve => setTimeout(resolve, 1500));
+                  
+                  try {
+                    // Create a donation record with simulated wallet payment
+                    const simulatedDonationId = `wallet_test_${Date.now()}`;
+                    const donationData = {
+                      type: donationType,
+                      amount: amount,
+                      plan: donationType === 'recurring' ? plan : null,
+                      email: email,
+                      payment_status: 'succeeded',
+                      session_id: simulatedDonationId,
+                      payment_method: detectedWalletType
+                    };
+                    
+                    const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/donations`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify(donationData),
+                    });
+                    
+                    if (response.ok) {
+                      const result = await response.json();
+                      console.log('[TEST MODE] Simulated donation created:', result);
+                      onSuccess(result.id);
+                    } else {
+                      setErrorMessage('Failed to create donation record');
+                      setIsLoading(false);
+                    }
+                  } catch (err) {
+                    console.error('[TEST MODE] Error in simulated wallet payment:', err);
+                    setErrorMessage('Payment simulation failed: ' + err.message);
+                    setIsLoading(false);
+                  }
                 }}
-              />
-            </div>
+              >
+                <div className="flex items-center justify-center">
+                  {detectedWalletType === 'apple_pay' ? (
+                    <>
+                      <FaApple className="text-xl mr-2" />
+                      <span>Pay with Apple Pay</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaGooglePay className="text-xl mr-2" />
+                      <span>Pay with Google Pay</span>
+                    </>
+                  )}
+                </div>
+              </button>
+            ) : (
+              <div className="animate-pulse bg-night-800 rounded-lg p-6">
+                <div className="h-12 bg-gray-700 rounded"></div>
+              </div>
+            )}
             <p className="mt-2 text-xs text-gray-400">
-              Click the {detectedWalletType === 'apple_pay' ? 'Apple Pay' : 'Google Pay'} button to complete your donation.
+              {detectedWalletType === 'apple_pay' 
+                ? 'Click the Apple Pay button to complete your donation.'
+                : 'Click the Google Pay button to complete your donation.'}
+              {isTestMode && SIMULATE_WALLET_SUPPORT && 
+                ' (Test mode - no actual payment will be processed)'}
             </p>
           </div>
         ) : (
