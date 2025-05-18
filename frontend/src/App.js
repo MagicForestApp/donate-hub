@@ -207,6 +207,7 @@ const DonationPage = () => {
     try {
       // For demonstration purposes, we'll simulate a successful payment
       // In a real application, this would integrate with Stripe
+      // We're skipping the actual Stripe payment integration for this MVP
       
       // Create a donation record
       const donationData = {
