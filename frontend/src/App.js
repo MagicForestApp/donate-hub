@@ -1253,7 +1253,10 @@ const ThankYouPage = () => {
         const result = await response.json();
         console.log('Tree created successfully:', result);
         // Redirect to forest map
-        navigate('/forest');
+        console.log('Redirecting to forest map...');
+        setTimeout(() => {
+          navigate('/forest');
+        }, 500); // Small delay to ensure navigation happens
       } else {
         // If error, log and still redirect for demo purposes
         const errorText = await response.text();
