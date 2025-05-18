@@ -1456,6 +1456,14 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', clientSecret, on
       return;
     }
     
+    // If using wallet payments, the PaymentRequestButtonElement handles the payment
+    // This submit button will only be used for card payments
+    if (paymentMethod === 'wallet') {
+      setIsLoading(false);
+      setErrorMessage('Please use the wallet payment button to complete your donation.');
+      return;
+    }
+    
     let paymentResult;
     
     if (paymentMethod === 'card') {
