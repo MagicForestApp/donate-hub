@@ -1394,7 +1394,7 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', onSuccess, onCan
       }
       
       const { error, paymentIntent } = await stripe.confirmCardPayment(
-        elements.getClientSecret(),
+        clientSecret,
         {
           payment_method: {
             card: cardElement,
