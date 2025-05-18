@@ -431,40 +431,52 @@ const DonationPage = () => {
 const ForestMap = () => {
   const [trees, setTrees] = useState([]);
   const [selectedTree, setSelectedTree] = useState(null);
+  const [loading, setLoading] = useState(true);
   const mapWidth = 1000;
   const mapHeight = 600;
   
-  useEffect(() => {
-    // Fetch trees from backend
-    const fetchTrees = async () => {
-      try {
-        console.log('Fetching trees from API...');
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/trees`);
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Trees from API:', data);
-          if (data && data.length > 0) {
-            // Make sure each tree has a size property
-            const processedTrees = data.map(tree => ({
-              ...tree,
-              size: tree.size || Math.random() * 0.5 + 0.7 // Add default size if missing
-            }));
-            setTrees(processedTrees);
-          } else {
-            console.log('No trees found, using mock data');
-            setTrees(getMockTrees());
-          }
+  // Function to fetch trees
+  const fetchTrees = async () => {
+    try {
+      setLoading(true);
+      console.log('Fetching trees from API...');
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/trees?t=${new Date().getTime()}`); // Add timestamp to prevent caching
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Trees from API:', data);
+        if (data && data.length > 0) {
+          // Make sure each tree has a size property
+          const processedTrees = data.map(tree => ({
+            ...tree,
+            size: tree.size || Math.random() * 0.5 + 0.7 // Add default size if missing
+          }));
+          setTrees(processedTrees);
         } else {
-          console.error('Error response from API:', response.status);
+          console.log('No trees found, using mock data');
           setTrees(getMockTrees());
         }
-      } catch (error) {
-        console.error('Exception fetching trees:', error);
+      } else {
+        console.error('Error response from API:', response.status);
         setTrees(getMockTrees());
       }
-    };
-    
+    } catch (error) {
+      console.error('Exception fetching trees:', error);
+      setTrees(getMockTrees());
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Fetch trees when the component mounts
+  useEffect(() => {
     fetchTrees();
+    
+    // Also fetch trees every few seconds to ensure we have the latest data
+    const intervalId = setInterval(() => {
+      fetchTrees();
+    }, 3000); // Refresh every 3 seconds
+    
+    return () => clearInterval(intervalId); // Clean up on unmount
   }, []);
   
   // Mock data for initial development
