@@ -1590,6 +1590,13 @@ const OneTimeCheckout = ({ amount, email, onCancel }) => {
       <div className="mb-6 p-6 bg-night-600 rounded-lg">
         <h3 className="text-xl font-semibold mb-4">One-time Donation - ${amount}</h3>
         
+        {isTestMode && (
+          <div className="mb-4 p-3 bg-yellow-900/30 border border-yellow-800 rounded-lg text-yellow-200 text-sm">
+            <p className="font-semibold mb-1">⚠️ Demo Mode</p>
+            <p>This is running in test mode. No real payments will be processed.</p>
+          </div>
+        )}
+        
         <p className="text-gray-300 mb-6">
           You're making a one-time donation to The Magic Forest. Thank you for your support!
         </p>
