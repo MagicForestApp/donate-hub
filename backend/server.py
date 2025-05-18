@@ -256,7 +256,7 @@ async def create_payment_intent(data: Dict[str, Any] = Body(...)):
                 fake_secret = f"secret_6e9513f603da4a119a2ae60d"
                 return {
                     "clientSecret": f"{fake_pi_id}_{fake_secret}",
-                    "publishableKey": os.environ.get("STRIPE_PUBLISHABLE_KEY", "pk_test_TYooMQauvdEDq54NiTphI7jx"),
+                    "publishableKey": os.environ.get("STRIPE_PUBLISHABLE_KEY", "pk_test_51RQ8jg014qVof0nwmxH2RQhBZjc9aRremvcmJLOmBHvh32YoWmtCV9V5YsUt1apn5aDjvI1uQZm6Vf8yBpgetgFe00E8f5dlib"),
                     "isTestMode": test_mode,
                     "testNote": TEST_MODE_NOTE if test_mode else "",
                     "error": str(e)
