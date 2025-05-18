@@ -1331,46 +1331,119 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', clientSecret, on
   const elements = useElements();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('card'); // 'card', 'apple_pay', or 'google_pay'
+  const [paymentMethod, setPaymentMethod] = useState('card'); // 'card', 'wallet'
   const isTestMode = process.env.REACT_APP_STRIPE_MODE === 'test';
   
-  // Check for Apple Pay and Google Pay support
-  const [applePaySupported, setApplePaySupported] = useState(false);
-  const [googlePaySupported, setGooglePaySupported] = useState(false);
+  // For wallet payments (Apple Pay / Google Pay)
+  const [paymentRequest, setPaymentRequest] = useState(null);
+  const [walletPaymentSupported, setWalletPaymentSupported] = useState(false);
+  const [walletDetectionComplete, setWalletDetectionComplete] = useState(false);
+  const [detectedWalletType, setDetectedWalletType] = useState(null); // 'apple_pay', 'google_pay', null
   
+  // Set up payment request for Apple Pay / Google Pay
   useEffect(() => {
     if (stripe) {
-      // Check if Apple Pay is supported
-      if (window.ApplePaySession && stripe.applePay) {
-        const canMakePaymentsPromise = window.ApplePaySession.canMakePaymentsWithActiveCard('merchant.com.example');
-        canMakePaymentsPromise.then(canMakePayments => {
-          setApplePaySupported(canMakePayments);
-        });
-      }
+      const pr = stripe.paymentRequest({
+        country: 'US',
+        currency: 'usd',
+        total: {
+          label: 'Magic Forest Donation',
+          amount: amount * 100, // in cents
+        },
+        requestPayerName: true,
+        requestPayerEmail: true,
+        requestPayerPhone: false,
+        requestShipping: false,
+      });
       
-      // Check if Google Pay is supported
-      if (window.PaymentRequest && stripe.paymentRequest) {
-        try {
-          const paymentRequest = stripe.paymentRequest({
-            country: 'US',
-            currency: 'usd',
-            total: {
-              label: 'Magic Forest Donation',
-              amount: amount * 100, // in cents
-            },
-            requestPayerName: true,
-            requestPayerEmail: true,
-          });
+      // Check if wallet payment is supported
+      pr.canMakePayment().then(result => {
+        if (result) {
+          setWalletPaymentSupported(true);
+          setPaymentRequest(pr);
+          console.log('Wallet payment supported:', result);
           
-          paymentRequest.canMakePayment().then(result => {
-            setGooglePaySupported(result && !!result.googlePay);
-          });
-        } catch (e) {
-          console.error('Error checking for Google Pay support:', e);
+          // Detect which wallet type is available
+          if (result.applePay) {
+            setDetectedWalletType('apple_pay');
+            console.log('Apple Pay supported');
+          } else if (result.googlePay) {
+            setDetectedWalletType('google_pay');
+            console.log('Google Pay supported');
+          }
         }
-      }
+        setWalletDetectionComplete(true);
+      });
+      
+      // Handle payment method creation
+      pr.on('paymentmethod', async (event) => {
+        setIsLoading(true);
+        
+        try {
+          const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
+            clientSecret,
+            { payment_method: event.paymentMethod.id },
+            { handleActions: false }
+          );
+          
+          if (confirmError) {
+            // Report error to the Payment Request API
+            event.complete('fail');
+            setErrorMessage(confirmError.message);
+            setIsLoading(false);
+            return;
+          }
+          
+          // Payment successfully confirmed
+          event.complete('success');
+          
+          // Process payment completion
+          if (paymentIntent.status === 'succeeded' || paymentIntent.status === 'requires_capture') {
+            // Continue handling donation creation as before
+            try {
+              const donationData = {
+                type: donationType,
+                amount: amount,
+                plan: donationType === 'recurring' ? plan : null,
+                email: email || event.payerEmail || event.paymentMethod.billing_details.email,
+                payment_status: 'succeeded',
+                session_id: paymentIntent.id,
+                payment_method: detectedWalletType || 'wallet'
+              };
+              
+              const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/donations`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(donationData),
+              });
+              
+              if (response.ok) {
+                const result = await response.json();
+                console.log('Donation created:', result);
+                onSuccess(result.id);
+              } else {
+                console.error('Failed to create donation record, but payment was successful');
+                onSuccess(paymentIntent.id);
+              }
+            } catch (err) {
+              console.error('Error creating donation record:', err);
+              onSuccess(paymentIntent.id);
+            }
+          } else {
+            setErrorMessage('Payment processing failed. Please try again.');
+            setIsLoading(false);
+          }
+        } catch (err) {
+          console.error('Error confirming wallet payment:', err);
+          event.complete('fail');
+          setErrorMessage('Payment failed: ' + err.message);
+          setIsLoading(false);
+        }
+      });
     }
-  }, [stripe, amount]);
+  }, [stripe, amount, clientSecret, donationType, plan, email, onSuccess, detectedWalletType]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
