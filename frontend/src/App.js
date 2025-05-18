@@ -8,7 +8,10 @@ import { Elements, PaymentElement, useStripe, useElements, CardElement } from '@
 import './App.css';
 
 // Initialize Stripe
-const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
+// Use import.meta.env for Vite or process.env for Create React App
+const stripeKey = import.meta.env?.REACT_APP_STRIPE_PUBLISHABLE_KEY || process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
+console.log('Stripe key being used:', stripeKey); // Debug log for key validation
+const stripePromise = loadStripe(stripeKey);
 
 // Component definitions
 const HomePage = () => {
