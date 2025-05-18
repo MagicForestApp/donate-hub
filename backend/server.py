@@ -70,6 +70,9 @@ class DonationBase(BaseModel):
     type: str  # "one-time" or "recurring"
     amount: float
     plan: Optional[str] = None  # "seedling", "guardian", "ranger" for recurring donations
+    email: Optional[str] = None
+    payment_status: Optional[str] = None
+    session_id: Optional[str] = None
 
 class DonationCreate(DonationBase):
     pass
