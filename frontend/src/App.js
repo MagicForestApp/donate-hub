@@ -500,6 +500,7 @@ const DonationPage = () => {
                 donationType={donationType}
                 plan={recurringPlan}
                 email={email}
+                clientSecret={clientSecret}
                 onSuccess={handlePaymentSuccess}
                 onCancel={handleCancel}
               />
