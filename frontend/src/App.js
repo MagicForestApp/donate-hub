@@ -1261,7 +1261,10 @@ const ThankYouPage = () => {
         // If error, log and still redirect for demo purposes
         const errorText = await response.text();
         console.error('Error creating tree:', response.status, errorText);
-        navigate('/forest');
+        console.log('Redirecting to forest map despite error...');
+        setTimeout(() => {
+          navigate('/forest');
+        }, 500); // Small delay to ensure navigation happens
       }
     } catch (error) {
       console.error('Exception creating tree:', error);
