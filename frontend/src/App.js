@@ -1551,7 +1551,7 @@ const SubscriptionCheckout = ({ plan, email, onCancel }) => {
           </button>
           <button
             type="button"
-            className="flex-1 px-6 py-3 bg-primary-600 hover:bg-primary-700 rounded-lg text-white font-semibold flex items-center justify-center"
+            className="flex-1 px-6 py-3 bg-primary-600 hover:bg-primary-700 rounded-lg text-white font-semibold flex items-center justify-center relative"
             onClick={handleSubscribe}
             disabled={isLoading}
           >
@@ -1561,7 +1561,16 @@ const SubscriptionCheckout = ({ plan, email, onCancel }) => {
                 Processing...
               </>
             ) : (
-              <>Continue to Subscription</>
+              <>
+                Continue to Subscription
+                {isTestMode && (
+                  <span className="absolute top-0 right-0 transform translate-x-1/3 -translate-y-1/3">
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-yellow-900/60 text-yellow-200 border border-yellow-800/50 text-[10px]">
+                      Test
+                    </span>
+                  </span>
+                )}
+              </>
             )}
           </button>
         </div>
