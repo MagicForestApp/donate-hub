@@ -96,3 +96,57 @@ select:focus {
   outline: 2px solid #4CAF50;
   outline-offset: 2px;
 }
+
+/* Stripe Card Element Styling */
+.StripeElement {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: #1f1f1f;
+  color: white;
+  font-size: 16px;
+  font-family: 'Inter', sans-serif;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: box-shadow 0.3s ease;
+}
+
+.StripeElement--focus {
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.5);
+}
+
+.StripeElement--invalid {
+  box-shadow: 0 0 0 2px rgba(255, 82, 82, 0.5);
+}
+
+.StripeElement--complete {
+  border: 1px solid rgba(76, 175, 80, 0.5);
+}
+
+/* Payment Method Tabs */
+.payment-tabs {
+  display: flex;
+  border-bottom: 1px solid #333;
+  margin-bottom: 20px;
+}
+
+.payment-tab {
+  padding: 10px 20px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.payment-tab.active {
+  border-bottom-color: #4CAF50;
+  color: #4CAF50;
+}
+
+.payment-tab:hover:not(.active) {
+  border-bottom-color: #333;
+}
+
+/* Payment Form Container */
+.payment-form {
+  background-color: #222;
+  border-radius: 12px;
+  padding: 20px;
+}
