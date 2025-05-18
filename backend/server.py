@@ -134,6 +134,10 @@ async def create_donation(donation: DonationCreate):
         "type": donation.type,
         "amount": donation.amount,
         "plan": donation.plan,
+        "email": donation.email,
+        "payment_status": donation.payment_status,
+        "session_id": donation.session_id,
+        "payment_method": donation.payment_method,
         "timestamp": now
     }
     await db.donations.insert_one(donation_doc)
