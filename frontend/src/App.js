@@ -881,8 +881,14 @@ const ConfirmationPage = () => {
     const fetchDonationDetails = async () => {
       try {
         if (!donationId) {
-          // If no donation ID, redirect to home
-          navigate('/');
+          // Create a default donation for demo purposes
+          setDonationDetails({
+            id: 'demo-donation',
+            amount: 15,
+            type: 'one-time',
+            plan: null,
+            timestamp: new Date().toISOString(),
+          });
           return;
         }
         
