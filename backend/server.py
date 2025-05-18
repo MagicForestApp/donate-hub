@@ -57,7 +57,7 @@ db = client.magic_forest_db
 # Initialize Stripe with the secret key from environment variables
 stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "sk_test_51O9SjXHfUPLCHsI9OUafaapwpDRJ6yRwK7dtHs5IYa5O9VkBvt5PuOHJQ4FC68Ycm0z1qlGZJcCrbVqRUvlnaMtp006SYdkSbA")
 STRIPE_MODE = os.environ.get("STRIPE_MODE", "test")
-FRONTEND_URL = "https://6a357df8-fffa-4695-b5a4-2ce00a730b96.preview.emergentagent.com"
+FRONTEND_URL = "https://d7a030ab-2fb9-45b2-8295-6340f97fdca2.preview.emergentagent.com"
 
 # Create a test mode note for users
 TEST_MODE_NOTE = "Test mode is active. In test mode, use the test card number 4242 4242 4242 4242, any future expiration date, any 3-digit CVC, and any 5-digit ZIP code."

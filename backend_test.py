@@ -5,7 +5,7 @@ import json
 from datetime import datetime
 
 class MagicForestAPITester:
-    def __init__(self, base_url="https://6a357df8-fffa-4695-b5a4-2ce00a730b96.preview.emergentagent.com"):
+    def __init__(self, base_url="https://d7a030ab-2fb9-45b2-8295-6340f97fdca2.preview.emergentagent.com"):
         self.base_url = base_url
         self.tests_run = 0
         self.tests_passed = 0
