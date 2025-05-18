@@ -1589,6 +1589,7 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', clientSecret, on
       }
     },
     hidePostalCode: false, // Show postal code field in the form
+    disableLink: true, // Disable Link autofill feature
   };
   
   // If test mode, pre-fill card details (for demo purposes)
