@@ -477,7 +477,24 @@ const DonationPage = () => {
           )}
           
           {checkoutStep === 'payment' && clientSecret && (
-            <Elements stripe={stripePromise} options={{ clientSecret }}>
+            <Elements 
+              stripe={stripePromise} 
+              options={{ 
+                clientSecret,
+                appearance: {
+                  theme: 'night',
+                  variables: {
+                    colorPrimary: '#4CAF50',
+                    colorBackground: '#1A1A1A',
+                    colorText: '#FFFFFF',
+                    colorDanger: '#ff5252',
+                    fontFamily: 'Inter, system-ui, sans-serif',
+                    spacingUnit: '4px',
+                    borderRadius: '8px',
+                  },
+                }
+              }}
+            >
               <CheckoutForm 
                 amount={donationType === 'one-time' ? amount : getRecurringAmount(recurringPlan)}
                 donationType={donationType}
