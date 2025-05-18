@@ -45,6 +45,21 @@ class MagicForestAPITester:
             print(f"❌ Failed - Error: {str(e)}")
             return False, {}
 
+    def test_health_check(self):
+        """Test the health check endpoint"""
+        success, response = self.run_test(
+            "Health Check",
+            "GET",
+            "health",
+            200
+        )
+        
+        if success:
+            print(f"Status: {response.get('status', 'Not found')}")
+            print(f"Timestamp: {response.get('timestamp', 'Not found')}")
+        
+        return success, response
+
     def test_create_payment_intent(self, amount=25, email="test@example.com"):
         """Test creating a payment intent for a one-time donation"""
         success, response = self.run_test(
@@ -58,11 +73,11 @@ class MagicForestAPITester:
         if success:
             print(f"Client Secret: {response.get('clientSecret', 'Not found')[:10]}...")
             print(f"Test Mode: {response.get('isTestMode', 'Not found')}")
-            print(f"Test Note: {response.get('testNote', 'Not found')[:30]}...")
+            print(f"Test Note: {response.get('testNote', 'Not found')[:30]}..." if 'testNote' in response else "No test note found")
         
         return success, response
 
-    def test_create_donation(self, amount=25, email="test@example.com", session_id="test_session_123"):
+    def test_create_donation(self, amount=25, email="test@example.com", session_id="test_session_123", payment_method="card"):
         """Test creating a donation record"""
         success, response = self.run_test(
             "Create Donation",
@@ -74,12 +89,38 @@ class MagicForestAPITester:
                 "amount": amount,
                 "email": email,
                 "payment_status": "succeeded",
-                "session_id": session_id
+                "session_id": session_id,
+                "payment_method": payment_method
             }
         )
         
         if success:
             print(f"Donation ID: {response.get('id', 'Not found')}")
+            print(f"Payment Method: {response.get('payment_method', payment_method)}")
+        
+        return success, response
+
+    def test_create_wallet_payment_donation(self, amount=25, email="test@example.com", payment_method="apple_pay"):
+        """Test creating a donation record with wallet payment method"""
+        session_id = f"wallet_test_{datetime.now().strftime('%H%M%S')}"
+        success, response = self.run_test(
+            f"Create Donation with {payment_method}",
+            "POST",
+            "donations",
+            200,
+            data={
+                "type": "one-time",
+                "amount": amount,
+                "email": email,
+                "payment_status": "succeeded",
+                "session_id": session_id,
+                "payment_method": payment_method
+            }
+        )
+        
+        if success:
+            print(f"Donation ID: {response.get('id', 'Not found')}")
+            print(f"Payment Method: {response.get('payment_method', 'Not found')}")
         
         return success, response
 
@@ -95,6 +136,23 @@ class MagicForestAPITester:
         
         if success:
             print(f"Session URL: {response.get('url', 'Not found')[:30]}...")
+            print(f"Test Mode: {response.get('test_mode', 'Not found')}")
+        
+        return success, response
+
+    def test_create_checkout_session(self, amount=25, email="test@example.com"):
+        """Test creating a checkout session for one-time donation"""
+        success, response = self.run_test(
+            "Create Checkout Session",
+            "POST",
+            "create-checkout-session",
+            200,
+            data={"amount": amount, "email": email}
+        )
+        
+        if success:
+            print(f"Session URL: {response.get('url', 'Not found')[:30]}...")
+            print(f"Test Mode: {response.get('test_mode', 'Not found')}")
         
         return success, response
 
@@ -104,7 +162,10 @@ def main():
     test_email = f"test_{datetime.now().strftime('%H%M%S')}@example.com"
     
     # Run tests
-    print(f"Testing Stripe Integration at: {tester.base_url}")
+    print(f"Testing Magic Forest API at: {tester.base_url}")
+    
+    # Test health check
+    tester.test_health_check()
     
     # Test creating a payment intent
     payment_intent_success, payment_intent_data = tester.test_create_payment_intent(
@@ -112,16 +173,37 @@ def main():
         email=test_email
     )
     
-    # Test creating a donation
+    # Test creating a donation with card payment
     donation_success, donation_data = tester.test_create_donation(
         amount=25,
         email=test_email,
-        session_id=f"test_session_{datetime.now().strftime('%H%M%S')}"
+        session_id=f"test_session_{datetime.now().strftime('%H%M%S')}",
+        payment_method="card"
+    )
+    
+    # Test creating a donation with Apple Pay
+    apple_pay_success, apple_pay_data = tester.test_create_wallet_payment_donation(
+        amount=25,
+        email=test_email,
+        payment_method="apple_pay"
+    )
+    
+    # Test creating a donation with Google Pay
+    google_pay_success, google_pay_data = tester.test_create_wallet_payment_donation(
+        amount=25,
+        email=test_email,
+        payment_method="google_pay"
     )
     
     # Test creating a subscription
     subscription_success, subscription_data = tester.test_create_subscription(
         plan="seedling",
+        email=test_email
+    )
+    
+    # Test creating a checkout session
+    checkout_success, checkout_data = tester.test_create_checkout_session(
+        amount=25,
         email=test_email
     )
     
