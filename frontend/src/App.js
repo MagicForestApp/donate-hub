@@ -253,6 +253,13 @@ const DonationPage = () => {
         <div className="max-w-2xl mx-auto bg-night-700 rounded-xl shadow-xl p-8">
           <h1 className="text-3xl font-bold mb-6 text-center">Support The Magic Forest</h1>
           
+          {isTestMode && (
+            <div className="mb-6 p-3 bg-yellow-900/30 border border-yellow-800 rounded-lg text-yellow-200 text-sm">
+              <p className="font-semibold mb-1">⚠️ Demo Mode</p>
+              <p>This donation system is running in test mode. No real payments will be processed.</p>
+            </div>
+          )}
+          
           {error && (
             <div className="mb-6 p-4 bg-red-900/30 border border-red-800 rounded-lg text-red-200">
               {error}
