@@ -1358,10 +1358,10 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', clientSecret, on
       
       // Check if wallet payment is supported
       pr.canMakePayment().then(result => {
+        console.log('Wallet payment support result:', result);
         if (result) {
           setWalletPaymentSupported(true);
           setPaymentRequest(pr);
-          console.log('Wallet payment supported:', result);
           
           // Detect which wallet type is available
           if (result.applePay) {
@@ -1370,8 +1370,16 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', clientSecret, on
           } else if (result.googlePay) {
             setDetectedWalletType('google_pay');
             console.log('Google Pay supported');
+          } else if (result.link) {
+            // Link is another Stripe payment method that can be used
+            console.log('Link payment method is supported but not enabled in this app');
           }
+        } else {
+          console.log('No wallet payment methods are supported in this browser/device');
         }
+        setWalletDetectionComplete(true);
+      }).catch(error => {
+        console.error('Error detecting wallet payment support:', error);
         setWalletDetectionComplete(true);
       });
       
