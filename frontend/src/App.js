@@ -1269,7 +1269,10 @@ const ThankYouPage = () => {
     } catch (error) {
       console.error('Exception creating tree:', error);
       // If error, still redirect for demo purposes
-      navigate('/forest');
+      console.log('Redirecting to forest map after exception...');
+      setTimeout(() => {
+        navigate('/forest');
+      }, 500); // Small delay to ensure navigation happens
     }
   };
   
