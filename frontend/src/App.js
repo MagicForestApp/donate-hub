@@ -247,13 +247,21 @@ const DonationPage = () => {
         
         if (response.ok) {
           const data = await response.json();
-          setClientSecret(data.clientSecret);
-          setCheckoutStep('payment');
+          console.log('Payment intent response:', data);
+          
+          // Validate the client secret format
+          const clientSecretRegex = /^pi_[a-zA-Z0-9_]+_secret_[a-zA-Z0-9]+$/;
+          if (data.clientSecret && clientSecretRegex.test(data.clientSecret)) {
+            setClientSecret(data.clientSecret);
+            setCheckoutStep('payment');
+          } else {
+            console.warn('Invalid client secret format, falling back to external checkout');
+            setCheckoutStep('external');
+          }
         } else {
-          // For demo purposes with invalid test keys, show external checkout instead
+          console.error('Failed to create payment intent, falling back to external checkout');
           setCheckoutStep('external');
           
-          // In production, you would handle the error:
           try {
             const errorData = await response.json();
             setError(errorData.detail || 'Failed to initialize payment');
