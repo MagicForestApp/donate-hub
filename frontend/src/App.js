@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FaTree, FaSeedling, FaShieldAlt, FaUserAstronaut, FaArrowRight } from 'react-icons/fa';
+import { FaTree, FaSeedling, FaShieldAlt, FaUserAstronaut, FaArrowRight, FaLock, FaCreditCard, FaApple, FaGooglePay } from 'react-icons/fa';
 import { BiDonateHeart } from 'react-icons/bi';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import './App.css';
 
 // Component definitions
