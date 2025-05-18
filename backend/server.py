@@ -76,6 +76,7 @@ class DonationBase(BaseModel):
     email: Optional[str] = None
     payment_status: Optional[str] = None
     session_id: Optional[str] = None
+    payment_method: Optional[str] = "card"  # "card", "apple_pay", "google_pay", "wallet"
 
 class DonationCreate(DonationBase):
     pass
