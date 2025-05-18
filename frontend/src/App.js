@@ -1326,6 +1326,10 @@ const ConfirmationPage = () => {
 };
 
 // Stripe payment form component
+// Enable this flag to simulate wallet payment options in test mode even if the browser doesn't support them
+// NOTE: These simulated wallets won't actually process payments - they're just for UI testing
+const SIMULATE_WALLET_SUPPORT = true;
+
 const CheckoutForm = ({ amount, donationType, plan, email = '', clientSecret, onSuccess, onCancel }) => {
   const stripe = useStripe();
   const elements = useElements();
