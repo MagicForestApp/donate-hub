@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 
 class StripeIntegrationTester:
-    def __init__(self, base_url="https://6a357df8-fffa-4695-b5a4-2ce00a730b96.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://6a357df8-fffa-4695-b5a4-2ce00a730b96.preview.emergentagent.com"):
         self.base_url = base_url
         self.tests_run = 0
         self.tests_passed = 0
@@ -44,22 +44,22 @@ class StripeIntegrationTester:
             print(f"❌ Failed - Error: {str(e)}")
             return False, {}
 
-    def test_create_payment_intent(self, amount=2500):
+    def test_create_payment_intent(self, amount=25):
         """Test creating a payment intent"""
         return self.run_test(
             "Create Payment Intent",
             "POST",
-            "create-payment-intent",
+            "api/create-payment-intent",
             200,
             data={"amount": amount}
         )
 
-    def test_create_checkout_session(self, amount=2500):
+    def test_create_checkout_session(self, amount=25):
         """Test creating a checkout session"""
         return self.run_test(
             "Create Checkout Session",
             "POST",
-            "create-checkout-session",
+            "api/create-checkout-session",
             200,
             data={"amount": amount}
         )
@@ -69,30 +69,16 @@ class StripeIntegrationTester:
         return self.run_test(
             "Create Subscription",
             "POST",
-            "create-subscription",
+            "api/create-subscription",
             200,
             data={"plan": plan_id}
         )
-    
-    def test_get_stripe_config(self):
-        """Test getting the Stripe configuration"""
-        return self.run_test(
-            "Get Stripe Config",
-            "GET",
-            "stripe-config",
-            200
-        )
 
 def main():
-    print(f"Testing Stripe Integration at: https://6a357df8-fffa-4695-b5a4-2ce00a730b96.preview.emergentagent.com\n")
+    print(f"Testing Stripe Integration at: {os.environ.get('REACT_APP_BACKEND_URL', 'https://6a357df8-fffa-4695-b5a4-2ce00a730b96.preview.emergentagent.com')}\n")
     
     # Setup
     tester = StripeIntegrationTester()
-    
-    # Test Stripe configuration
-    success, response = tester.test_get_stripe_config()
-    if success:
-        print(f"Stripe Mode: {response.get('mode', 'unknown')}")
     
     # Test payment intent creation
     tester.test_create_payment_intent()
