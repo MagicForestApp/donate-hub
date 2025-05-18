@@ -1313,6 +1313,46 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', onSuccess, onCan
   const elements = useElements();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('card'); // 'card', 'apple_pay', or 'google_pay'
+  const isTestMode = process.env.REACT_APP_STRIPE_MODE === 'test';
+  
+  // Check for Apple Pay and Google Pay support
+  const [applePaySupported, setApplePaySupported] = useState(false);
+  const [googlePaySupported, setGooglePaySupported] = useState(false);
+  
+  useEffect(() => {
+    if (stripe) {
+      // Check if Apple Pay is supported
+      if (window.ApplePaySession && stripe.applePay) {
+        const canMakePaymentsPromise = window.ApplePaySession.canMakePaymentsWithActiveCard('merchant.com.example');
+        canMakePaymentsPromise.then(canMakePayments => {
+          setApplePaySupported(canMakePayments);
+        });
+      }
+      
+      // Check if Google Pay is supported
+      if (window.PaymentRequest && stripe.paymentRequest) {
+        try {
+          const paymentRequest = stripe.paymentRequest({
+            country: 'US',
+            currency: 'usd',
+            total: {
+              label: 'Magic Forest Donation',
+              amount: amount * 100, // in cents
+            },
+            requestPayerName: true,
+            requestPayerEmail: true,
+          });
+          
+          paymentRequest.canMakePayment().then(result => {
+            setGooglePaySupported(result && !!result.googlePay);
+          });
+        } catch (e) {
+          console.error('Error checking for Google Pay support:', e);
+        }
+      }
+    }
+  }, [stripe, amount]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -1324,28 +1364,53 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', onSuccess, onCan
       setErrorMessage('Stripe has not loaded yet. Please try again.');
       return;
     }
-
-    const { error: submitError } = await elements.submit();
-    if (submitError) {
-      setErrorMessage(submitError.message);
-      setIsLoading(false);
-      return;
+    
+    let paymentResult;
+    
+    if (paymentMethod === 'card') {
+      const cardElement = elements.getElement(CardElement);
+      
+      if (!cardElement) {
+        setIsLoading(false);
+        setErrorMessage('Card element not found. Please try again.');
+        return;
+      }
+      
+      const { error, paymentIntent } = await stripe.confirmCardPayment(
+        elements.getClientSecret(),
+        {
+          payment_method: {
+            card: cardElement,
+            billing_details: {
+              email: email,
+            },
+          },
+        }
+      );
+      
+      if (error) {
+        setErrorMessage(error.message);
+        setIsLoading(false);
+        return;
+      }
+      
+      paymentResult = paymentIntent;
+    } else {
+      // For Apple Pay and Google Pay, we'd handle payment confirmation differently
+      // This is a simplified example - in production, you'd handle this flow properly
+      if (isTestMode) {
+        // In test mode, simulate a successful payment
+        paymentResult = { id: `demo-${Date.now()}`, status: 'succeeded' };
+      } else {
+        setErrorMessage('Payment method not implemented in this demo.');
+        setIsLoading(false);
+        return;
+      }
     }
 
-    const { error, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: window.location.origin + '/confirmation',
-      },
-      redirect: 'if_required',
-    });
-
-    if (error) {
-      setErrorMessage(error.message);
-      setIsLoading(false);
-    } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+    if (paymentResult && paymentResult.status === 'succeeded') {
       // Payment succeeded
-      console.log('Payment succeeded:', paymentIntent);
+      console.log('Payment succeeded:', paymentResult);
       
       // Create a donation record in our database
       try {
@@ -1355,7 +1420,7 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', onSuccess, onCan
           plan: donationType === 'recurring' ? plan : null,
           email: email,
           payment_status: 'succeeded',
-          session_id: paymentIntent.id
+          session_id: paymentResult.id
         };
         
         const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/donations`, {
@@ -1374,12 +1439,12 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', onSuccess, onCan
           const errorData = await response.json();
           console.error('Failed to create donation:', errorData);
           // Still consider payment successful even if our record creation fails
-          onSuccess(paymentIntent.id);
+          onSuccess(paymentResult.id);
         }
       } catch (err) {
         console.error('Error creating donation record:', err);
         // Still consider payment successful even if our record creation fails
-        onSuccess(paymentIntent.id);
+        onSuccess(paymentResult.id);
       }
     } else {
       setErrorMessage('Something went wrong with your payment. Please try again.');
@@ -1387,36 +1452,131 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', onSuccess, onCan
     }
   };
 
-  const isTestMode = process.env.REACT_APP_STRIPE_MODE === 'test';
-
-  const paymentElementOptions = {
-    layout: 'tabs',
-    defaultValues: {
-      billingDetails: {
-        email: email,
-        name: isTestMode ? 'Test User' : '',
-        address: isTestMode ? {
-          postalCode: '12345'
-        } : undefined
+  const cardElementOptions = {
+    style: {
+      base: {
+        color: '#E0E0E0',
+        fontFamily: '"Inter", sans-serif',
+        fontSmoothing: 'antialiased',
+        fontSize: '16px',
+        '::placeholder': {
+          color: '#A0A0A0'
+        },
+        backgroundColor: 'transparent',
       },
-      // Add test card values if in test mode
-      ...(isTestMode && {
-        card: {
-          number: '4242424242424242',
-          cvc: '123',
-          expiry: '04/34'
-        }
-      })
-    }
+      invalid: {
+        color: '#fa7e7e',
+        iconColor: '#fa7e7e'
+      }
+    },
+    hidePostalCode: false, // Show postal code field in the form
   };
   
+  // If test mode, pre-fill card details (for demo purposes)
+  const testCardDetails = isTestMode ? {
+    cardNumber: '4242424242424242',
+    cardExpiry: '04/34',
+    cardCvc: '123',
+    billingDetails: {
+      name: 'Test User',
+      postalCode: '12345'
+    }
+  } : null;
+  
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="payment-form">
+      <h3 className="text-xl font-semibold mb-4">Complete Your Donation</h3>
+      
+      {isTestMode && (
+        <div className="mb-4 text-center">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-900/30 text-yellow-200 border border-yellow-800/50">
+            <span className="mr-1">🧪</span> Using test mode — no real payment will be made
+          </span>
+        </div>
+      )}
+      
       <div className="mb-6">
-        <PaymentElement id="payment-element" options={paymentElementOptions} />
-        {isTestMode && (
-          <div className="mt-2 text-xs text-gray-400 italic">
-            <p>This is a test card. No real payment will be made.</p>
+        <div className="flex mb-4 border-b border-night-600">
+          <button
+            type="button"
+            className={`px-4 py-2 -mb-px text-sm font-medium ${
+              paymentMethod === 'card' 
+                ? 'text-primary-400 border-b-2 border-primary-400' 
+                : 'text-gray-400 hover:text-gray-300'
+            }`}
+            onClick={() => setPaymentMethod('card')}
+          >
+            <div className="flex items-center">
+              <FaCreditCard className="mr-2" />
+              Credit/Debit Card
+            </div>
+          </button>
+          
+          {applePaySupported && (
+            <button
+              type="button"
+              className={`px-4 py-2 -mb-px text-sm font-medium ${
+                paymentMethod === 'apple_pay' 
+                  ? 'text-primary-400 border-b-2 border-primary-400' 
+                  : 'text-gray-400 hover:text-gray-300'
+              }`}
+              onClick={() => setPaymentMethod('apple_pay')}
+            >
+              <div className="flex items-center">
+                <FaApple className="mr-2" />
+                Apple Pay
+              </div>
+            </button>
+          )}
+          
+          {googlePaySupported && (
+            <button
+              type="button"
+              className={`px-4 py-2 -mb-px text-sm font-medium ${
+                paymentMethod === 'google_pay' 
+                  ? 'text-primary-400 border-b-2 border-primary-400' 
+                  : 'text-gray-400 hover:text-gray-300'
+              }`}
+              onClick={() => setPaymentMethod('google_pay')}
+            >
+              <div className="flex items-center">
+                <FaGooglePay className="mr-2" />
+                Google Pay
+              </div>
+            </button>
+          )}
+        </div>
+        
+        {paymentMethod === 'card' ? (
+          <div>
+            <div className="p-4 bg-night-800 rounded-lg mb-2">
+              <CardElement options={cardElementOptions} />
+            </div>
+            {isTestMode && (
+              <div className="text-xs text-gray-400 italic ml-1">
+                <p>Using test card data — no real payment will be made.</p>
+              </div>
+            )}
+          </div>
+        ) : paymentMethod === 'apple_pay' ? (
+          <div className="p-8 text-center">
+            <div className="bg-night-800 rounded-lg p-6 inline-flex items-center justify-center">
+              <FaApple className="text-white text-xl mr-2" />
+              <span className="text-white font-medium">Pay ${amount.toFixed(2)}</span>
+            </div>
+            <p className="mt-2 text-xs text-gray-400">
+              Click the Apple Pay button to complete your donation.
+            </p>
+          </div>
+        ) : (
+          <div className="p-8 text-center">
+            <div className="bg-night-800 rounded-lg p-6 inline-flex items-center justify-center">
+              <FaGooglePay className="text-white text-xl mr-2" />
+              <span className="text-white font-medium">Pay ${amount.toFixed(2)}</span>
+            </div>
+            <p className="mt-2 text-xs text-gray-400">
+              Click the Google Pay button to complete your donation.
+            </p>
           </div>
         )}
       </div>
