@@ -254,9 +254,9 @@ const DonationPage = () => {
           <h1 className="text-3xl font-bold mb-6 text-center">Support The Magic Forest</h1>
           
           {isTestMode && (
-            <div className="mb-6 p-3 bg-yellow-900/30 border border-yellow-800 rounded-lg text-yellow-200 text-sm">
+            <div className="mb-4 p-3 bg-yellow-900/30 border border-yellow-800 rounded-lg text-yellow-200 text-sm">
               <p className="font-semibold mb-1">⚠️ Demo Mode</p>
-              <p className="mb-2">This donation system is running in test mode. No real payments will be processed.</p>
+              <p className="mb-2">This is running in test mode. No real payments will be processed.</p>
               <details>
                 <summary className="cursor-pointer font-medium">Test Card Numbers</summary>
                 <div className="mt-2 pl-3 border-l-2 border-yellow-800">
