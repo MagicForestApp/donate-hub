@@ -1207,6 +1207,339 @@ const ConfirmationPage = () => {
   );
 };
 
+// Stripe payment form component
+const CheckoutForm = ({ amount, donationType, plan, email = '', onSuccess, onCancel }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setErrorMessage('');
+
+    if (!stripe || !elements) {
+      setIsLoading(false);
+      setErrorMessage('Stripe has not loaded yet. Please try again.');
+      return;
+    }
+
+    const { error: submitError } = await elements.submit();
+    if (submitError) {
+      setErrorMessage(submitError.message);
+      setIsLoading(false);
+      return;
+    }
+
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: window.location.origin + '/confirmation',
+      },
+      redirect: 'if_required',
+    });
+
+    if (error) {
+      setErrorMessage(error.message);
+      setIsLoading(false);
+    } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+      // Payment succeeded
+      console.log('Payment succeeded:', paymentIntent);
+      
+      // Create a donation record in our database
+      try {
+        const donationData = {
+          type: donationType,
+          amount: amount,
+          plan: donationType === 'recurring' ? plan : null,
+          email: email,
+          payment_status: 'succeeded',
+          session_id: paymentIntent.id
+        };
+        
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/donations`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(donationData),
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Donation created:', result);
+          onSuccess(result.id);
+        } else {
+          const errorData = await response.json();
+          console.error('Failed to create donation:', errorData);
+          // Still consider payment successful even if our record creation fails
+          onSuccess(paymentIntent.id);
+        }
+      } catch (err) {
+        console.error('Error creating donation record:', err);
+        // Still consider payment successful even if our record creation fails
+        onSuccess(paymentIntent.id);
+      }
+    } else {
+      setErrorMessage('Something went wrong with your payment. Please try again.');
+      setIsLoading(false);
+    }
+  };
+
+  const paymentElementOptions = {
+    layout: 'tabs',
+    defaultValues: {
+      billingDetails: {
+        email: email,
+      }
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div className="mb-6">
+        <PaymentElement id="payment-element" options={paymentElementOptions} />
+      </div>
+      
+      {errorMessage && (
+        <div className="mb-4 p-4 bg-red-900/30 border border-red-800 rounded-lg text-red-200">
+          {errorMessage}
+        </div>
+      )}
+      
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center text-gray-400 text-sm">
+          <FaLock className="mr-2" />
+          <span>Secure payment via Stripe</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <FaCreditCard className="text-gray-400" />
+          <FaApple className="text-gray-400" />
+          <FaGooglePay className="text-gray-400" />
+        </div>
+      </div>
+      
+      <div className="flex space-x-4">
+        <button
+          type="button"
+          className="px-6 py-3 bg-night-600 hover:bg-night-500 rounded-lg text-white"
+          onClick={onCancel}
+          disabled={isLoading}
+        >
+          Back
+        </button>
+        <button
+          type="submit"
+          className="flex-1 px-6 py-3 bg-primary-600 hover:bg-primary-700 rounded-lg text-white font-semibold flex items-center justify-center"
+          disabled={isLoading || !stripe || !elements}
+        >
+          {isLoading ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+              Processing...
+            </>
+          ) : (
+            <>Complete Payment</>
+          )}
+        </button>
+      </div>
+    </form>
+  );
+};
+
+// Checkout Session handler for recurring subscriptions
+const SubscriptionCheckout = ({ plan, email, onCancel }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  
+  const handleSubscribe = async () => {
+    setIsLoading(true);
+    setErrorMessage('');
+    
+    try {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/create-subscription`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          plan,
+          email
+        }),
+      });
+      
+      if (response.ok) {
+        const { url } = await response.json();
+        // Redirect to Stripe Checkout
+        window.location.href = url;
+      } else {
+        const errorData = await response.json();
+        setErrorMessage(errorData.detail || 'Failed to create subscription');
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error('Subscription error:', error);
+      setErrorMessage('An error occurred. Please try again.');
+      setIsLoading(false);
+    }
+  };
+  
+  return (
+    <div>
+      <div className="mb-6 p-6 bg-night-600 rounded-lg">
+        <h3 className="text-xl font-semibold mb-4">
+          {plan === 'seedling' && 'Seedling - $5/month'}
+          {plan === 'guardian' && 'Tree Guardian - $15/month'}
+          {plan === 'ranger' && 'UFO Ranger - $30/month'}
+        </h3>
+        
+        <p className="text-gray-300 mb-6">
+          You're setting up a monthly donation to The Magic Forest. You can cancel anytime from your account.
+        </p>
+        
+        {errorMessage && (
+          <div className="mb-4 p-4 bg-red-900/30 border border-red-800 rounded-lg text-red-200">
+            {errorMessage}
+          </div>
+        )}
+        
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center text-gray-400 text-sm">
+            <FaLock className="mr-2" />
+            <span>Secure payment via Stripe</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <FaCreditCard className="text-gray-400" />
+            <FaApple className="text-gray-400" />
+            <FaGooglePay className="text-gray-400" />
+          </div>
+        </div>
+        
+        <div className="flex space-x-4">
+          <button
+            type="button"
+            className="px-6 py-3 bg-night-700 hover:bg-night-600 rounded-lg text-white"
+            onClick={onCancel}
+            disabled={isLoading}
+          >
+            Back
+          </button>
+          <button
+            type="button"
+            className="flex-1 px-6 py-3 bg-primary-600 hover:bg-primary-700 rounded-lg text-white font-semibold flex items-center justify-center"
+            onClick={handleSubscribe}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                Processing...
+              </>
+            ) : (
+              <>Continue to Subscription</>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Checkout Session handler for one-time payments
+const OneTimeCheckout = ({ amount, email, onCancel }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  
+  const handleCheckout = async () => {
+    setIsLoading(true);
+    setErrorMessage('');
+    
+    try {
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/create-checkout-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount,
+          email
+        }),
+      });
+      
+      if (response.ok) {
+        const { url } = await response.json();
+        // Redirect to Stripe Checkout
+        window.location.href = url;
+      } else {
+        const errorData = await response.json();
+        setErrorMessage(errorData.detail || 'Failed to create checkout session');
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      setErrorMessage('An error occurred. Please try again.');
+      setIsLoading(false);
+    }
+  };
+  
+  return (
+    <div>
+      <div className="mb-6 p-6 bg-night-600 rounded-lg">
+        <h3 className="text-xl font-semibold mb-4">One-time Donation - ${amount}</h3>
+        
+        <p className="text-gray-300 mb-6">
+          You're making a one-time donation to The Magic Forest. Thank you for your support!
+        </p>
+        
+        {errorMessage && (
+          <div className="mb-4 p-4 bg-red-900/30 border border-red-800 rounded-lg text-red-200">
+            {errorMessage}
+          </div>
+        )}
+        
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center text-gray-400 text-sm">
+            <FaLock className="mr-2" />
+            <span>Secure payment via Stripe</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <FaCreditCard className="text-gray-400" />
+            <FaApple className="text-gray-400" />
+            <FaGooglePay className="text-gray-400" />
+          </div>
+        </div>
+        
+        <div className="flex space-x-4">
+          <button
+            type="button"
+            className="px-6 py-3 bg-night-700 hover:bg-night-600 rounded-lg text-white"
+            onClick={onCancel}
+            disabled={isLoading}
+          >
+            Back
+          </button>
+          <button
+            type="button"
+            className="flex-1 px-6 py-3 bg-primary-600 hover:bg-primary-700 rounded-lg text-white font-semibold flex items-center justify-center"
+            onClick={handleCheckout}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                Processing...
+              </>
+            ) : (
+              <>Continue to Checkout</>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ThankYouPage = () => {
   const navigate = useNavigate();
   const [donationDetails, setDonationDetails] = useState(null);
