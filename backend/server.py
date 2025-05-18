@@ -55,7 +55,7 @@ db = client.magic_forest_db
 # Initialize Stripe
 # In a production environment, store the key in .env file
 # Initialize Stripe with the secret key from environment variables
-stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "sk_test_4eC39HqLyjWDarjtT1zdp7dc")
+stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "sk_test_51RQ8jg014qVof0nw4sj0ljKhWGTnWxhp5IDRLPyigurUVFwNClyfOOhywR5uUpXx7SVbH4QKwVItlufHXDw9h1ee00h04qF2S5")
 STRIPE_MODE = os.environ.get("STRIPE_MODE", "test")
 FRONTEND_URL = "https://d7a030ab-2fb9-45b2-8295-6340f97fdca2.preview.emergentagent.com"
 
