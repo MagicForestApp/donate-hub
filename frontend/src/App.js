@@ -207,6 +207,7 @@ const DonationPage = () => {
   const [showCheckout, setShowCheckout] = useState(false);
   const [clientSecret, setClientSecret] = useState('');
   const [checkoutStep, setCheckoutStep] = useState('form'); // form, payment, subscription, external
+  const isTestMode = process.env.REACT_APP_STRIPE_MODE === 'test';
   
   const handleEmailChange = (e) => {
     setEmail(e.target.value);
