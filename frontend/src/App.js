@@ -1485,7 +1485,7 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', clientSecret, on
     
     // If using wallet payments, the PaymentRequestButtonElement handles the payment
     // This submit button will only be used for card payments
-    if (paymentMethod === 'wallet') {
+    if (paymentMethod === 'wallet' && !isTestMode) {
       setIsLoading(false);
       setErrorMessage('Please use the wallet payment button to complete your donation.');
       return;
