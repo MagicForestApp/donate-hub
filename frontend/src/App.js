@@ -947,40 +947,63 @@ const ConfirmationPage = () => {
     password: '',
   });
   
-  // Get donation ID from URL params
+  // Get donation ID or session ID from URL params
   const urlParams = new URLSearchParams(window.location.search);
   const donationId = urlParams.get('donationId');
+  const sessionId = urlParams.get('session_id');
   
   useEffect(() => {
     // Fetch donation details
     const fetchDonationDetails = async () => {
       try {
-        if (!donationId) {
-          // Create a default donation for demo purposes
-          setDonationDetails({
-            id: 'demo-donation',
-            amount: 15,
-            type: 'one-time',
-            plan: null,
-            timestamp: new Date().toISOString(),
-          });
-          return;
+        // If we have a Stripe checkout session ID
+        if (sessionId) {
+          console.log('Fetching checkout session:', sessionId);
+          const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/checkout-session/${sessionId}`);
+          if (response.ok) {
+            const sessionData = await response.json();
+            console.log('Checkout session data:', sessionData);
+            
+            setDonationDetails({
+              id: sessionData.donation_id,
+              amount: sessionData.amount,
+              type: sessionData.donation_type,
+              plan: sessionData.plan,
+              timestamp: new Date().toISOString(),
+              email: sessionData.customer_email,
+            });
+            
+            if (sessionData.customer_email) {
+              setEmail(sessionData.customer_email);
+            }
+            
+            return;
+          } else {
+            console.error('Error fetching checkout session:', response.status);
+          }
         }
         
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/donations/${donationId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setDonationDetails(data);
-        } else {
-          // If donation not found, use mock data
-          setDonationDetails({
-            id: donationId,
-            amount: 30,
-            type: 'one-time',
-            plan: null,
-            timestamp: new Date().toISOString(),
-          });
+        // If we have a direct donation ID
+        if (donationId) {
+          const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/donations/${donationId}`);
+          if (response.ok) {
+            const data = await response.json();
+            setDonationDetails(data);
+            if (data.email) {
+              setEmail(data.email);
+            }
+            return;
+          }
         }
+        
+        // If no valid donation ID or session, use mock data
+        setDonationDetails({
+          id: 'demo-donation',
+          amount: 15,
+          type: 'one-time',
+          plan: null,
+          timestamp: new Date().toISOString(),
+        });
       } catch (error) {
         console.error('Error fetching donation details:', error);
         // If error, use mock data
