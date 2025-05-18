@@ -149,6 +149,7 @@ async def create_tree(tree: TreeCreate):
         "type": tree.type,
         "x": random.uniform(50, 950),  # Random X position
         "y": random.uniform(50, 550),  # Random Y position
+        "size": random.uniform(0.7, 1.2),  # Random size between 0.7 and 1.2
         "timestamp": now
     }
     await db.trees.insert_one(tree_doc)
