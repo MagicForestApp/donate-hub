@@ -1767,6 +1767,80 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', clientSecret, on
         )}
       </div>
       
+      {/* Test mode simulated wallet payment button */}
+      {paymentMethod === 'wallet' && isTestMode && SIMULATE_WALLET_SUPPORT && (
+        <div className="mb-4">
+          <button
+            type="button"
+            className={`w-full py-3 px-6 rounded-md text-white font-semibold shadow-lg ${
+              detectedWalletType === 'apple_pay' 
+                ? 'bg-black hover:bg-gray-900' 
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
+            onClick={async () => {
+              setIsLoading(true);
+              console.log('[TEST MODE] Simulating wallet payment submission');
+              
+              // Simulate processing delay
+              await new Promise(resolve => setTimeout(resolve, 1500));
+              
+              try {
+                // Create a donation record with simulated wallet payment
+                const simulatedDonationId = `wallet_test_${Date.now()}`;
+                const donationData = {
+                  type: donationType,
+                  amount: amount,
+                  plan: donationType === 'recurring' ? plan : null,
+                  email: email,
+                  payment_status: 'succeeded',
+                  session_id: simulatedDonationId,
+                  payment_method: detectedWalletType
+                };
+                
+                const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/donations`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(donationData),
+                });
+                
+                if (response.ok) {
+                  const result = await response.json();
+                  console.log('[TEST MODE] Simulated donation created:', result);
+                  onSuccess(result.id);
+                } else {
+                  setErrorMessage('Failed to create donation record');
+                  setIsLoading(false);
+                }
+              } catch (err) {
+                console.error('[TEST MODE] Error in simulated wallet payment:', err);
+                setErrorMessage('Payment simulation failed: ' + err.message);
+                setIsLoading(false);
+              }
+            }}
+            disabled={isLoading}
+          >
+            <div className="flex items-center justify-center">
+              {detectedWalletType === 'apple_pay' ? (
+                <>
+                  <FaApple className="text-xl mr-2" />
+                  <span>Click to Test Apple Pay</span>
+                </>
+              ) : (
+                <>
+                  <FaGooglePay className="text-xl mr-2" />
+                  <span>Click to Test Google Pay</span>
+                </>
+              )}
+            </div>
+          </button>
+          <p className="text-center text-xs text-gray-400 mt-1">
+            This button simulates {detectedWalletType === 'apple_pay' ? 'Apple' : 'Google'} Pay in test mode
+          </p>
+        </div>
+      )}
+      
       {errorMessage && (
         <div className="mb-4 p-4 bg-red-900/30 border border-red-800 rounded-lg text-red-200">
           {errorMessage}
