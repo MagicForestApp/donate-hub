@@ -1638,25 +1638,31 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', clientSecret, on
               </div>
             )}
           </div>
-        ) : paymentMethod === 'apple_pay' ? (
-          <div className="p-8 text-center">
-            <div className="bg-night-800 rounded-lg p-6 inline-flex items-center justify-center">
-              <FaApple className="text-white text-xl mr-2" />
-              <span className="text-white font-medium">Pay ${amount.toFixed(2)}</span>
+        ) : paymentMethod === 'wallet' && paymentRequest ? (
+          <div className="p-4 text-center">
+            <div className="bg-night-800 rounded-lg p-2 inline-block">
+              <PaymentRequestButtonElement
+                options={{
+                  paymentRequest,
+                  style: {
+                    paymentRequestButton: {
+                      theme: 'dark',
+                      height: '48px',
+                      type: 'donate',
+                    },
+                  },
+                }}
+              />
             </div>
             <p className="mt-2 text-xs text-gray-400">
-              Click the Apple Pay button to complete your donation.
+              Click the {detectedWalletType === 'apple_pay' ? 'Apple Pay' : 'Google Pay'} button to complete your donation.
             </p>
           </div>
         ) : (
           <div className="p-8 text-center">
-            <div className="bg-night-800 rounded-lg p-6 inline-flex items-center justify-center">
-              <FaGooglePay className="text-white text-xl mr-2" />
-              <span className="text-white font-medium">Pay ${amount.toFixed(2)}</span>
+            <div className="animate-pulse bg-night-800 rounded-lg p-6 inline-flex items-center justify-center">
+              <span className="text-white font-medium">Loading payment options...</span>
             </div>
-            <p className="mt-2 text-xs text-gray-400">
-              Click the Google Pay button to complete your donation.
-            </p>
           </div>
         )}
       </div>
