@@ -92,6 +92,7 @@ class Tree(TreeBase):
     id: str
     x: float  # X coordinate on the map
     y: float  # Y coordinate on the map
+    size: float = 1.0  # Tree size scaling factor
     timestamp: datetime
     
     class Config:
