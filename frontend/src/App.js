@@ -239,38 +239,27 @@ const DonationPage = () => {
       try {
         const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/create-payment-intent`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             amount: amount,
-            email: email
+            email: email,
+            donationType: donationType,
           }),
         });
+        const data = await response.json();
+        console.log('Payment intent response:', data);
         
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Payment intent response:', data);
-          
-          // Validate the client secret format
-          const clientSecretRegex = /^pi_[a-zA-Z0-9_]+_secret_[a-zA-Z0-9]+$/;
-          if (data.clientSecret && clientSecretRegex.test(data.clientSecret)) {
-            setClientSecret(data.clientSecret);
-            setCheckoutStep('payment');
-          } else {
-            console.warn('Invalid client secret format, falling back to external checkout');
-            setCheckoutStep('external');
-          }
+        if (data.error) {
+          setError(`Payment error: ${data.error}`);
+          setIsProcessing(false);
+          return;
+        }
+        
+        if (data.clientSecret) {
+          setClientSecret(data.clientSecret);
+          setCheckoutStep('payment');
         } else {
-          console.error('Failed to create payment intent, falling back to external checkout');
-          setCheckoutStep('external');
-          
-          try {
-            const errorData = await response.json();
-            setError(errorData.detail || 'Failed to initialize payment');
-          } catch (e) {
-            setError('Failed to initialize payment');
-          }
+          setError('Could not initialize payment. Please try again later.');
         }
       } catch (error) {
         console.error('Payment init error:', error);
