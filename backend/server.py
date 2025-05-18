@@ -356,8 +356,7 @@ async def create_subscription(data: Dict[str, Any] = Body(...)):
         if STRIPE_MODE == "test":
             # Create a donation record for demo purposes
             donation_id = str(uuid.uuid4())
-            donation_data = {
-                "id": donation_id,
+            donation_dict = {
                 "type": "recurring",
                 "amount": amount if 'amount' in locals() else 15,
                 "plan": plan,
@@ -365,6 +364,7 @@ async def create_subscription(data: Dict[str, Any] = Body(...)):
                 "payment_status": "succeeded",
                 "session_id": f"demo_{donation_id}"
             }
+            donation_data = {**donation_dict, "id": donation_id}
             donation = await create_donation(DonationCreate(**donation_data))
             
             return {
