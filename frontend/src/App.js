@@ -480,7 +480,7 @@ const DonationPage = () => {
             <Elements 
               stripe={stripePromise} 
               options={{ 
-                clientSecret,
+                clientSecret: clientSecret,
                 appearance: {
                   theme: 'night',
                   variables: {
