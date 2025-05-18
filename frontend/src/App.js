@@ -1325,7 +1325,7 @@ const ConfirmationPage = () => {
 };
 
 // Stripe payment form component
-const CheckoutForm = ({ amount, donationType, plan, email = '', onSuccess, onCancel }) => {
+const CheckoutForm = ({ amount, donationType, plan, email = '', clientSecret, onSuccess, onCancel }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isLoading, setIsLoading] = useState(false);
