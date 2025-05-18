@@ -200,56 +200,16 @@ const DonationPage = () => {
   const navigate = useNavigate();
   const [donationType, setDonationType] = useState('one-time');
   const [amount, setAmount] = useState(30);
+  const [email, setEmail] = useState('');
   const [recurringPlan, setRecurringPlan] = useState('guardian');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [clientSecret, setClientSecret] = useState('');
+  const [checkoutStep, setCheckoutStep] = useState('form'); // form, payment, subscription, external
   
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsProcessing(true);
-    setError('');
-    
-    try {
-      // For demonstration purposes, we'll simulate a successful payment
-      // In a real application, this would integrate with Stripe
-      // We're skipping the actual Stripe payment integration for this MVP
-      
-      // Create a donation record
-      const donationData = {
-        type: donationType,
-        amount: donationType === 'one-time' ? amount : getRecurringAmount(recurringPlan),
-        plan: donationType === 'recurring' ? recurringPlan : null,
-        timestamp: new Date().toISOString()
-      };
-      
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/donations`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(donationData),
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        // Log the response for debugging
-        console.log('Donation response:', result);
-        // Navigate to confirmation page instead of thank-you
-        navigate(`/confirmation?donationId=${result.id}`);
-      } else {
-        try {
-          const errorData = await response.json();
-          setError(errorData.detail || 'Failed to process donation');
-        } catch (e) {
-          setError('Failed to process donation');
-        }
-      }
-    } catch (error) {
-      setError('An error occurred while processing your donation');
-      console.error('Donation error:', error);
-    } finally {
-      setIsProcessing(false);
-    }
+  const handleEmailChange = (e) => {
+    setEmail(e.target.value);
   };
   
   const getRecurringAmount = (plan) => {
@@ -259,6 +219,31 @@ const DonationPage = () => {
       case 'ranger': return 30;
       default: return 15;
     }
+  };
+  
+  const handleProceed = async (e) => {
+    e.preventDefault();
+    setIsProcessing(true);
+    setError('');
+    
+    if (donationType === 'recurring') {
+      // For recurring donations, show the subscription checkout
+      setCheckoutStep('subscription');
+      setIsProcessing(false);
+    } else {
+      // For one-time donations, show the external checkout
+      setCheckoutStep('external');
+      setIsProcessing(false);
+    }
+  };
+  
+  const handlePaymentSuccess = (donationId) => {
+    // Redirect to confirmation page
+    navigate(`/confirmation?donationId=${donationId}`);
+  };
+  
+  const handleCancel = () => {
+    setCheckoutStep('form');
   };
   
   return (
@@ -273,160 +258,209 @@ const DonationPage = () => {
             </div>
           )}
           
-          <div className="mb-8">
-            <div className="flex rounded-lg overflow-hidden mb-6">
-              <button
-                className={`flex-1 py-3 px-4 font-medium text-center ${
-                  donationType === 'one-time' 
-                    ? 'bg-primary-600 text-white' 
-                    : 'bg-night-600 text-gray-300 hover:bg-night-500'
-                }`}
-                onClick={() => setDonationType('one-time')}
-              >
-                One-time Donation
-              </button>
-              <button
-                className={`flex-1 py-3 px-4 font-medium text-center ${
-                  donationType === 'recurring' 
-                    ? 'bg-primary-600 text-white' 
-                    : 'bg-night-600 text-gray-300 hover:bg-night-500'
-                }`}
-                onClick={() => setDonationType('recurring')}
-              >
-                Monthly Donation
-              </button>
-            </div>
-            
-            <form onSubmit={handleSubmit}>
-              {donationType === 'one-time' ? (
-                <div className="mb-6">
-                  <label className="block text-gray-300 mb-2">Amount ($)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={amount}
-                    onChange={(e) => setAmount(parseInt(e.target.value) || 0)}
-                    className="w-full bg-night-800 border border-night-500 rounded-lg p-3 text-white"
-                    required
-                  />
-                  <div className="grid grid-cols-4 gap-2 mt-3">
-                    {[10, 25, 50, 100].map((value) => (
-                      <button
-                        key={value}
-                        type="button"
-                        className={`py-2 rounded-lg ${
-                          amount === value 
-                            ? 'bg-primary-600 text-white' 
-                            : 'bg-night-600 text-gray-300 hover:bg-night-500'
-                        }`}
-                        onClick={() => setAmount(value)}
-                      >
-                        ${value}
-                      </button>
-                    ))}
-                  </div>
-                  <p className="mt-2 text-sm text-gray-400">
-                    {amount >= 10 ? 
-                      '✅ This donation will plant a tree on our map!' : 
-                      '⚠️ Donations of $10 or more will plant a tree on our map.'}
-                  </p>
-                </div>
-              ) : (
-                <div className="mb-6">
-                  <label className="block text-gray-300 mb-2">Select a Plan</label>
-                  <div className="grid grid-cols-1 gap-3">
-                    <div 
-                      className={`p-4 rounded-lg cursor-pointer border-2 ${
-                        recurringPlan === 'seedling' 
-                          ? 'border-primary-500 bg-primary-900/20' 
-                          : 'border-night-500 bg-night-800 hover:bg-night-700'
-                      }`}
-                      onClick={() => setRecurringPlan('seedling')}
-                    >
-                      <div className="flex items-center">
-                        <div className="rounded-full bg-primary-800/30 p-3 mr-4">
-                          <FaSeedling className="text-primary-300 text-xl" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">Seedling</h3>
-                          <p className="text-sm text-gray-400">
-                            Support our forest at the seedling level
-                          </p>
-                          <p className="font-bold mt-1">$5 / month</p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div 
-                      className={`p-4 rounded-lg cursor-pointer border-2 ${
-                        recurringPlan === 'guardian' 
-                          ? 'border-primary-500 bg-primary-900/20' 
-                          : 'border-night-500 bg-night-800 hover:bg-night-700'
-                      }`}
-                      onClick={() => setRecurringPlan('guardian')}
-                    >
-                      <div className="flex items-center">
-                        <div className="rounded-full bg-primary-800/30 p-3 mr-4">
-                          <FaShieldAlt className="text-primary-300 text-xl" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">Tree Guardian</h3>
-                          <p className="text-sm text-gray-400">
-                            Become a guardian of the forest
-                          </p>
-                          <p className="font-bold mt-1">$15 / month</p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div 
-                      className={`p-4 rounded-lg cursor-pointer border-2 ${
-                        recurringPlan === 'ranger' 
-                          ? 'border-primary-500 bg-primary-900/20' 
-                          : 'border-night-500 bg-night-800 hover:bg-night-700'
-                      }`}
-                      onClick={() => setRecurringPlan('ranger')}
-                    >
-                      <div className="flex items-center">
-                        <div className="rounded-full bg-primary-800/30 p-3 mr-4">
-                          <FaUserAstronaut className="text-primary-300 text-xl" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">UFO Ranger</h3>
-                          <p className="text-sm text-gray-400">
-                            Join our elite group of forest protectors
-                          </p>
-                          <p className="font-bold mt-1">$30 / month</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <p className="mt-2 text-sm text-gray-400">
-                    ✅ All monthly donations plant a tree on our map!
-                  </p>
-                </div>
-              )}
-              
-              <div className="mb-6">
-                <p className="text-gray-400 mb-3">
-                  Your donation helps us acquire land and plant trees for conservation. 
-                  We'll use these funds responsibly to create a thriving forest ecosystem.
-                </p>
+          {checkoutStep === 'form' && (
+            <div className="mb-8">
+              <div className="flex rounded-lg overflow-hidden mb-6">
+                <button
+                  className={`flex-1 py-3 px-4 font-medium text-center ${
+                    donationType === 'one-time' 
+                      ? 'bg-primary-600 text-white' 
+                      : 'bg-night-600 text-gray-300 hover:bg-night-500'
+                  }`}
+                  onClick={() => setDonationType('one-time')}
+                >
+                  One-time Donation
+                </button>
+                <button
+                  className={`flex-1 py-3 px-4 font-medium text-center ${
+                    donationType === 'recurring' 
+                      ? 'bg-primary-600 text-white' 
+                      : 'bg-night-600 text-gray-300 hover:bg-night-500'
+                  }`}
+                  onClick={() => setDonationType('recurring')}
+                >
+                  Monthly Donation
+                </button>
               </div>
               
-              <button
-                type="submit"
-                className={`w-full py-3 rounded-lg font-medium text-white ${
-                  isProcessing 
-                    ? 'bg-primary-800 cursor-not-allowed' 
-                    : 'bg-primary-600 hover:bg-primary-700'
-                }`}
-                disabled={isProcessing}
-              >
-                {isProcessing ? 'Processing...' : 'Complete Donation'}
-              </button>
-            </form>
-          </div>
+              <form onSubmit={handleProceed}>
+                {donationType === 'one-time' ? (
+                  <div className="mb-6">
+                    <label className="block text-gray-300 mb-2">Amount ($)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={amount}
+                      onChange={(e) => setAmount(parseInt(e.target.value) || 0)}
+                      className="w-full bg-night-800 border border-night-500 rounded-lg p-3 text-white"
+                      required
+                    />
+                    <div className="grid grid-cols-4 gap-2 mt-3">
+                      {[10, 25, 50, 100].map((value) => (
+                        <button
+                          key={value}
+                          type="button"
+                          className={`py-2 rounded-lg ${
+                            amount === value 
+                              ? 'bg-primary-600 text-white' 
+                              : 'bg-night-600 text-gray-300 hover:bg-night-500'
+                          }`}
+                          onClick={() => setAmount(value)}
+                        >
+                          ${value}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-2 text-sm text-gray-400">
+                      {amount >= 10 ? 
+                        '✅ This donation will plant a tree on our map!' : 
+                        '⚠️ Donations of $10 or more will plant a tree on our map.'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="mb-6">
+                    <label className="block text-gray-300 mb-2">Select a Plan</label>
+                    <div className="grid grid-cols-1 gap-3">
+                      <div 
+                        className={`p-4 rounded-lg cursor-pointer border-2 ${
+                          recurringPlan === 'seedling' 
+                            ? 'border-primary-500 bg-primary-900/20' 
+                            : 'border-night-500 bg-night-800 hover:bg-night-700'
+                        }`}
+                        onClick={() => setRecurringPlan('seedling')}
+                      >
+                        <div className="flex items-center">
+                          <div className="rounded-full bg-primary-800/30 p-3 mr-4">
+                            <FaSeedling className="text-primary-300 text-xl" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold">Seedling</h3>
+                            <p className="text-sm text-gray-400">
+                              Support our forest at the seedling level
+                            </p>
+                            <p className="font-bold mt-1">$5 / month</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div 
+                        className={`p-4 rounded-lg cursor-pointer border-2 ${
+                          recurringPlan === 'guardian' 
+                            ? 'border-primary-500 bg-primary-900/20' 
+                            : 'border-night-500 bg-night-800 hover:bg-night-700'
+                        }`}
+                        onClick={() => setRecurringPlan('guardian')}
+                      >
+                        <div className="flex items-center">
+                          <div className="rounded-full bg-primary-800/30 p-3 mr-4">
+                            <FaShieldAlt className="text-primary-300 text-xl" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold">Tree Guardian</h3>
+                            <p className="text-sm text-gray-400">
+                              Become a guardian of the forest
+                            </p>
+                            <p className="font-bold mt-1">$15 / month</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div 
+                        className={`p-4 rounded-lg cursor-pointer border-2 ${
+                          recurringPlan === 'ranger' 
+                            ? 'border-primary-500 bg-primary-900/20' 
+                            : 'border-night-500 bg-night-800 hover:bg-night-700'
+                        }`}
+                        onClick={() => setRecurringPlan('ranger')}
+                      >
+                        <div className="flex items-center">
+                          <div className="rounded-full bg-primary-800/30 p-3 mr-4">
+                            <FaUserAstronaut className="text-primary-300 text-xl" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold">UFO Ranger</h3>
+                            <p className="text-sm text-gray-400">
+                              Join our elite group of forest protectors
+                            </p>
+                            <p className="font-bold mt-1">$30 / month</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="mt-2 text-sm text-gray-400">
+                      ✅ All monthly donations plant a tree on our map!
+                    </p>
+                  </div>
+                )}
+                
+                <div className="mb-6">
+                  <label className="block text-gray-300 mb-2">Email (optional)</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={handleEmailChange}
+                    placeholder="For receipt and donation updates"
+                    className="w-full bg-night-800 border border-night-500 rounded-lg p-3 text-white"
+                  />
+                </div>
+                
+                <div className="mb-6">
+                  <p className="text-gray-400 mb-3">
+                    Your donation helps us acquire land and plant trees for conservation. 
+                    We'll use these funds responsibly to create a thriving forest ecosystem.
+                  </p>
+                </div>
+                
+                <button
+                  type="submit"
+                  className={`w-full py-3 rounded-lg font-medium text-white ${
+                    isProcessing 
+                      ? 'bg-primary-800 cursor-not-allowed' 
+                      : 'bg-primary-600 hover:bg-primary-700'
+                  }`}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? 'Processing...' : 'Continue to Payment'}
+                </button>
+                
+                <div className="flex items-center justify-center mt-4">
+                  <div className="flex items-center text-gray-400 text-sm">
+                    <FaLock className="mr-2" />
+                    <span>Secure payments via Stripe</span>
+                  </div>
+                </div>
+              </form>
+            </div>
+          )}
+          
+          {checkoutStep === 'payment' && clientSecret && (
+            <Elements stripe={stripePromise} options={{ clientSecret }}>
+              <CheckoutForm 
+                amount={donationType === 'one-time' ? amount : getRecurringAmount(recurringPlan)}
+                donationType={donationType}
+                plan={recurringPlan}
+                email={email}
+                onSuccess={handlePaymentSuccess}
+                onCancel={handleCancel}
+              />
+            </Elements>
+          )}
+          
+          {checkoutStep === 'subscription' && (
+            <SubscriptionCheckout
+              plan={recurringPlan}
+              email={email}
+              onCancel={handleCancel}
+            />
+          )}
+          
+          {checkoutStep === 'external' && (
+            <OneTimeCheckout
+              amount={amount}
+              email={email}
+              onCancel={handleCancel}
+            />
+          )}
         </div>
       </div>
     </div>
