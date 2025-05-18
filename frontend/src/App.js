@@ -485,6 +485,7 @@ const DonationPage = () => {
               stripe={stripePromise} 
               options={{ 
                 clientSecret: clientSecret,
+                mode: 'payment',
                 appearance: {
                   theme: 'night',
                   variables: {
