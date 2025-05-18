@@ -1455,7 +1455,22 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', clientSecret, on
         }
       });
     }
-  }, [stripe, amount, clientSecret, donationType, plan, email, onSuccess, detectedWalletType]);
+    
+    // Set up wallet payment simulation in test mode if configured
+    if (isTestMode && SIMULATE_WALLET_SUPPORT && !walletPaymentSupported) {
+      // Simulate a detection delay to mimic real-world behavior
+      const simulationTimer = setTimeout(() => {
+        // Randomly simulate either Apple Pay or Google Pay
+        const simulatedWalletType = Math.random() > 0.5 ? 'apple_pay' : 'google_pay';
+        console.log(`[TEST MODE] Simulating wallet support for: ${simulatedWalletType}`);
+        setWalletPaymentSupported(true);
+        setDetectedWalletType(simulatedWalletType);
+        setWalletDetectionComplete(true);
+      }, 1000);
+      
+      return () => clearTimeout(simulationTimer);
+    }
+  }, [stripe, amount, clientSecret, donationType, plan, email, onSuccess, isTestMode, walletPaymentSupported]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
