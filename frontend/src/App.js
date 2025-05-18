@@ -254,9 +254,9 @@ const DonationPage = () => {
           <h1 className="text-3xl font-bold mb-6 text-center">Support The Magic Forest</h1>
           
           {isTestMode && (
-            <div className="mb-4 text-center">
+            <div className="mb-4 text-right">
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-900/30 text-yellow-200 border border-yellow-800/50">
-                <span className="mr-1">🧪</span> Test Mode • No real payments
+                <span className="mr-1">🧪</span> Test Mode
               </span>
             </div>
           )}
