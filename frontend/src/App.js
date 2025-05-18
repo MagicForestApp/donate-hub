@@ -1602,9 +1602,16 @@ const OneTimeCheckout = ({ amount, email, onCancel }) => {
       });
       
       if (response.ok) {
-        const { url } = await response.json();
-        // Redirect to Stripe Checkout
-        window.location.href = url;
+        const data = await response.json();
+        console.log('Checkout response:', data);
+        
+        // Handle direct redirect to confirmation for test mode
+        if (data.test_mode && data.url && data.url.includes('/confirmation')) {
+          window.location.href = data.url;
+        } else {
+          // Regular Stripe checkout redirect
+          window.location.href = data.url;
+        }
       } else {
         // For demo purposes with invalid test keys, provide a better error message
         const errorData = await response.json();
