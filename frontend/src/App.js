@@ -1390,7 +1390,7 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', clientSecret, on
 
     if (!stripe || !elements) {
       setIsLoading(false);
-      setErrorMessage('Stripe has not loaded yet. Please try again.');
+      setErrorMessage('Stripe has not loaded yet. Please try again. If this persists, contact support.');
       return;
     }
     
