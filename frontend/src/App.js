@@ -1424,6 +1424,7 @@ function App() {
             <Route path="/donate" element={<DonationPage />} />
             <Route path="/forest" element={<ForestMap />} />
             <Route path="/account" element={<UserAccount />} />
+            <Route path="/confirmation" element={<ConfirmationPage />} />
             <Route path="/thank-you" element={<ThankYouPage />} />
           </Routes>
         </main>
