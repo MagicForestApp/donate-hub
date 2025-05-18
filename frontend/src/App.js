@@ -507,9 +507,24 @@ const ForestMap = () => {
     <div className="relative w-full max-w-4xl mx-auto bg-forest-dark bg-cover bg-center rounded-xl overflow-hidden">
       <div className="absolute inset-0 bg-night-900/60"></div>
       
+      {loading && (
+        <div className="absolute inset-0 bg-night-900/60 flex items-center justify-center z-10">
+          <div className="flex flex-col items-center">
+            <div className="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p className="text-white text-lg">Growing forest...</p>
+          </div>
+        </div>
+      )}
+      
       <div className="relative p-4">
-        <svg width="100%" height={mapHeight} viewBox={`0 0 ${mapWidth} ${mapHeight}`} className="mx-auto">
-          {/* Background grid */}
+        {trees.length === 0 && !loading ? (
+          <div className="text-center py-12">
+            <p className="text-xl text-white mb-4">The forest is empty right now.</p>
+            <p className="text-gray-300 mb-6">Be the first to plant a tree!</p>
+          </div>
+        ) : (
+          <svg width="100%" height={mapHeight} viewBox={`0 0 ${mapWidth} ${mapHeight}`} className="mx-auto">
+            {/* Background grid */}
           {Array.from({ length: 10 }).map((_, i) => (
             <line 
               key={`grid-h-${i}`} 
