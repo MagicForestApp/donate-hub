@@ -949,8 +949,11 @@ const ConfirmationPage = () => {
   };
   
   const handleSkipRegistration = () => {
-    // Navigate to home page or forest map
-    navigate('/');
+    // Navigate to home page with a delay
+    console.log('Skipping registration and redirecting to home...');
+    setTimeout(() => {
+      navigate('/');
+    }, 500); // Small delay to ensure navigation happens
   };
   
   if (!donationDetails) {
