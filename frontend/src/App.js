@@ -944,8 +944,11 @@ const ConfirmationPage = () => {
     // In a real app, this would create a user account
     console.log('Creating user account:', formData);
     
-    // Navigate to thank-you page to personalize tree
-    navigate(`/thank-you?donationId=${donationId}`);
+    // Navigate to thank-you page to personalize tree with a delay
+    console.log('Redirecting to tree personalization page...');
+    setTimeout(() => {
+      navigate(`/thank-you?donationId=${donationId}`);
+    }, 500); // Small delay to ensure navigation happens
   };
   
   const handleSkipRegistration = () => {
