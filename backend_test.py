@@ -49,19 +49,19 @@ class StripeIntegrationTester:
         return self.run_test(
             "Create Payment Intent",
             "POST",
-            "payments/create-payment-intent",
+            "create-payment-intent",
             200,
             data={"amount": amount}
         )
 
-    def test_create_one_time_checkout(self, amount=2500):
-        """Test creating a one-time checkout session"""
+    def test_create_checkout_session(self, amount=2500):
+        """Test creating a checkout session"""
         return self.run_test(
-            "Create One-Time Checkout Session",
+            "Create Checkout Session",
             "POST",
-            "payments/create-checkout-session",
+            "create-checkout-session",
             200,
-            data={"amount": amount, "type": "one-time"}
+            data={"amount": amount}
         )
 
     def test_create_subscription(self, plan_id="tree_guardian"):
@@ -69,17 +69,17 @@ class StripeIntegrationTester:
         return self.run_test(
             "Create Subscription",
             "POST",
-            "payments/create-subscription",
+            "create-subscription",
             200,
             data={"plan": plan_id}
         )
     
-    def test_get_stripe_mode(self):
-        """Test getting the Stripe mode (test or live)"""
+    def test_get_stripe_config(self):
+        """Test getting the Stripe configuration"""
         return self.run_test(
-            "Get Stripe Mode",
+            "Get Stripe Config",
             "GET",
-            "payments/mode",
+            "stripe-config",
             200
         )
 
@@ -89,16 +89,16 @@ def main():
     # Setup
     tester = StripeIntegrationTester()
     
-    # Test Stripe mode
-    success, response = tester.test_get_stripe_mode()
+    # Test Stripe configuration
+    success, response = tester.test_get_stripe_config()
     if success:
         print(f"Stripe Mode: {response.get('mode', 'unknown')}")
     
     # Test payment intent creation
     tester.test_create_payment_intent()
     
-    # Test one-time checkout session creation
-    tester.test_create_one_time_checkout()
+    # Test checkout session creation
+    tester.test_create_checkout_session()
     
     # Test subscription creation
     tester.test_create_subscription()
