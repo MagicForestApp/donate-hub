@@ -474,7 +474,7 @@ const ForestMap = () => {
     // Also fetch trees every few seconds to ensure we have the latest data
     const intervalId = setInterval(() => {
       fetchTrees();
-    }, 3000); // Refresh every 3 seconds
+    }, 2000); // Refresh every 2 seconds for better responsiveness
     
     return () => clearInterval(intervalId); // Clean up on unmount
   }, []);
