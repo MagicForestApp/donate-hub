@@ -1,0 +1,180 @@
+<think>
+Okay, I need to create a detailed integration playbook for Stripe in a FastAPI and React crowdfunding app that handles one-time and recurring donations with support for credit cards, Apple Pay, and Google Pay. Let me start by breaking down the user's requirements.
+
+First, the user wants an integration guide that's structured and step-by-step. The playbook must cover installation, API setup, code examples for FastAPI and React, testing, and common pitfalls. They also mentioned keeping it short and precise, but since the original answer was over 1000 words, I need to balance brevity with comprehensiveness.
+
+Looking at the search results, result [1] provides FastAPI setup steps with Stripe, including code for creating checkout sessions and handling webhooks. The code samples here are crucial. Result [2] compares prebuilt Checkout vs. custom payment flows, which helps decide which approach to take. Since the user wants both one-time and recurring donations, the prebuilt Checkout might be easier, but the custom flow offers more control. However, considering time and simplicity, the prebuilt Checkout is better for this guide.
+
+Result [3] is a video tutorial on using the Payment Element with Python, which reinforces the steps for creating payment intents. Result [4] discusses subscription items, which is relevant for recurring donations. Result [5] and [6] cover Apple Pay and Google Pay setup in Stripe Dashboard, which is necessary for enabling those payment methods. 
+
+Result [7] and [8] show React integration with Stripe.js and the Payment Request Button, which is useful for the frontend part. The user wants React code examples, so I'll need to include components that handle Stripe Elements and the payment request button for Apple and Google Pay.
+
+Result [9] and [10] explain Checkout Sessions and how they handle both one-time and recurring payments, which aligns with the user's needs. The code examples here for creating subscriptions will be useful. Result [11] provides React code for the Payment Element and styling, which I can adapt.
+
+Result [12] and [15] are about implementing Apple Pay and Google Pay in React, which is essential for the frontend setup. Result [14] and [16] cover webhook setup and testing, which is critical for handling payment confirmations and subscription events. Result [17] lists test card numbers, necessary for testing.
+
+Now, structuring the playbook. The user specified sections like installation, API setup, backend (FastAPI), frontend (React), testing, and pitfalls. Each section needs concise steps and code samples.
+
+For the backend, setting up FastAPI routes to create checkout sessions for both payment types (one-time and subscription) is key. Using the Stripe Python library, environment variables for keys, and webhook handling as in [1] and [13]. The webhook endpoint must verify signatures to prevent fraud.
+
+On the frontend, React components using @stripe/stripe-js and Elements to load Stripe. The Payment Element (from [11]) will handle credit/debit cards. For Apple Pay and Google Pay, using the Payment Request Button ([8]) makes sense since it's a single integration for both. The example in [12] shows initializing the payment request and checking canMakePayment.
+
+Testing procedures should include using test cards from [17], testing both payment types, and ensuring webhooks are received. Common pitfalls might include not handling webhook verification, incorrect environment variables, or not setting up CORS properly for the frontend.
+
+Security best practices: keeping API keys secure, using HTTPS, validating webhook signatures, and not exposing sensitive data in the frontend.
+
+I need to make sure all code samples are concise, include necessary imports, and are explained briefly. Also, mention enabling Apple Pay and Google Pay in the Stripe Dashboard as a prerequisite, as per [5] and [6].
+
+Finally, ensure the guide flows logically from setup to implementation to testing, with clear headings and code blocks. Avoid unnecessary verbosity but cover all essential steps.
+</think>
+
+# Stripe Payment Integration Playbook for Crowdfunding Platforms  
+
+## 1. Environment Setup  
+**Install dependencies** for FastAPI backend:  
+```python  
+pip install fastapi uvicorn stripe python-dotenv  
+```  
+**React frontend dependencies**:  
+```bash  
+npm install @stripe/stripe-js @stripe/react-stripe-js  
+```  
+
+## 2. Stripe Account Configuration  
+1. Create Stripe account at [stripe.com](https://stripe.com)  
+2. Enable **Apple Pay** and **Google Pay** in Dashboard:  
+   - *Payments → Settings → Payment methods → Wallets*  
+3. Retrieve API keys from Developer Settings:  
+```python  
+# .env file  
+STRIPE_SECRET_KEY=sk_test_51...  
+STRIPE_PUBLISHABLE_KEY=pk_test_51...  
+FRONTEND_URL=http://localhost:3000  
+```  
+
+## 3. FastAPI Backend Implementation  
+
+### Payment Session Creation Endpoint  
+```python  
+from fastapi import FastAPI, HTTPException  
+import stripe  
+from dotenv import load_dotenv  
+
+app = FastAPI()  
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")  
+
+@app.post("/create-checkout-session")  
+async def create_session(amount: int, is_recurring: bool = False):  
+    session_type = "subscription" if is_recurring else "payment"  
+    product = stripe.Product.create(name="Crowdfunding Donation")  
+    price = stripe.Price.create(  
+        product=product.id,  
+        unit_amount=amount*100,  
+        currency="usd",  
+        recurring={"interval": "month"} if is_recurring else None  
+    )  
+    session = stripe.checkout.Session.create(  
+        payment_method_types=["card", "apple_pay", "google_pay"],  
+        line_items=[{"price": price.id, "quantity": 1}],  
+        mode=session_type,  
+        success_url=f"{os.getenv('FRONTEND_URL')}/success",  
+        cancel_url=f"{os.getenv('FRONTEND_URL')}/cancel"  
+    )  
+    return {"sessionId": session.id} [1][9][10]  
+```  
+
+### Webhook Handler  
+```python  
+@app.post("/webhook")  
+async def handle_webhook(request: Request):  
+    payload = await request.body()  
+    sig_header = request.headers.get("stripe-signature")  
+    try:  
+        event = stripe.Webhook.construct_event(  
+            payload, sig_header, os.getenv("STRIPE_WEBHOOK_SECRET")  
+        )  
+        if event.type == "checkout.session.completed":  
+            handle_payment_success(event.data.object)  
+        return {"status": "success"}  
+    except Exception as e:  
+        raise HTTPException(status_code=400, detail=str(e)) [1][13][16]  
+```  
+
+## 4. React Frontend Implementation  
+
+### Payment Component  
+```javascript  
+import { Elements, PaymentElement } from '@stripe/react-stripe-js'  
+import { loadStripe } from '@stripe/stripe-js'  
+
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUB_KEY)  
+
+function DonationForm() {  
+  return (  
+    <Elements stripe={stripePromise}>  
+      <PaymentElement options={{wallets: {applePay: 'auto', googlePay: 'auto'}}} />  
+      <button onClick={handleSubmit}>Donate</button>  
+    </Elements>  
+  )  
+} [7][11][15]  
+```  
+
+### Apple Pay/Google Pay Integration  
+```javascript  
+const paymentRequest = {  
+  country: 'US',  
+  currency: 'usd',  
+  total: {  
+    label: 'Donation',  
+    amount: donationAmount  
+  },  
+  requestPayerEmail: true  
+}  
+
+if (paymentRequestButton.canMakePayment()) {  
+  paymentRequestButton.mount('#wallet-button')  
+} [8][12][15]  
+```  
+
+## 5. Testing Procedures  
+
+1. **Test Cards**:  
+   - Successful Payment: 4242 4242 4242 4242  
+   - Recurring Subscription: 4000 0027 6000 3184  
+   - 3D Secure: 4000 0025 0000 3155 [17]  
+
+2. **Webhook Testing**:  
+```bash  
+stripe listen --forward-to localhost:8000/webhook  
+stripe trigger payment_intent.succeeded [16]  
+```  
+
+## 6. Security Best Practices  
+
+1. Always use HTTPS in production  
+2. Store API keys in environment variables  
+3. Validate webhook signatures  
+4. Limit customer metadata collection  
+5. Enable Radar fraud detection in Stripe Dashboard [1][16]  
+
+## 7. Common Pitfalls  
+
+1. **Currency Mismatch**: Ensure frontend/backend currency units match (cents vs dollars)  
+2. **Webhook Failures**: Test with `stripe-cli` before deployment  
+3. **CORS Configuration**: Set proper headers for frontend API calls  
+4. **Mobile Optimization**: Test wallet payments on actual devices  
+5. **Subscription Management**: Implement cancellation webhooks [10][14][16]  
+
+This implementation supports:  
+- One-time donations via credit/debit cards  
+- Monthly recurring subscriptions  
+- Native Apple/Google Pay on supported devices  
+- Automated receipt generation  
+- Real-time payment status updates through webhooks  
+
+For production deployment:  
+1. Replace test keys with live credentials  
+2. Configure domain verification for Apple Pay  
+3. Set up payment method restrictions in Dashboard  
+4. Implement rate limiting on API endpoints  
+5. Enable Stripe monitoring alerts
