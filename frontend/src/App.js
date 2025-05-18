@@ -1768,7 +1768,7 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', clientSecret, on
       </div>
       
       {/* Test mode simulated wallet payment button */}
-      {paymentMethod === 'wallet' && isTestMode && SIMULATE_WALLET_SUPPORT && (
+      {paymentMethod === 'wallet' && isTestMode && (
         <div className="mb-4">
           <button
             type="button"
@@ -1794,7 +1794,7 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', clientSecret, on
                   email: email,
                   payment_status: 'succeeded',
                   session_id: simulatedDonationId,
-                  payment_method: detectedWalletType
+                  payment_method: detectedWalletType || 'wallet'
                 };
                 
                 const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/donations`, {
