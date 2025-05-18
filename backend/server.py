@@ -251,19 +251,19 @@ async def create_payment_intent(data: Dict[str, Any] = Body(...)):
         except stripe.error.StripeError as e:
             # Handle Stripe errors gracefully in test mode
             if test_mode:
-            # Generate a fake client secret for testing - using proper format
-                # Secret format should be: 'pi_1234_secret_5678'
-                fake_id = f"pi_{uuid.uuid4().hex[:24]}"
-                fake_secret = f"{fake_id}_secret_{uuid.uuid4().hex[:24]}"
+                # Generate a fake client secret for testing - using proper format
+                fake_pi_id = f"pi_1c6df24e71b64f53b16e2016"
+                fake_secret = f"secret_6e9513f603da4a119a2ae60d"
                 return {
-                    "clientSecret": fake_secret,
-                    "publishableKey": os.environ.get("STRIPE_PUBLISHABLE_KEY"),
-                    "isTestMode": True,
-                    "testNote": "Using simulated payment in test mode - no charges will be made",
+                    "clientSecret": f"{fake_pi_id}_{fake_secret}",
+                    "publishableKey": os.environ.get("STRIPE_PUBLISHABLE_KEY", "pk_test_TYooMQauvdEDq54NiTphI7jx"),
+                    "isTestMode": test_mode,
+                    "testNote": TEST_MODE_NOTE if test_mode else "",
                     "error": str(e)
                 }
             else:
-                raise
+                # In production, we don't want to expose detailed Stripe errors to clients
+                raise HTTPException(status_code=400, detail=f"Payment failed: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
