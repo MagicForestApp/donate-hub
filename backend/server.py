@@ -244,7 +244,7 @@ async def create_payment_intent(data: Dict[str, Any] = Body(...)):
             
             return {
                 "clientSecret": intent["client_secret"],
-                "publishableKey": os.environ.get("STRIPE_PUBLISHABLE_KEY"),
+                "publishableKey": os.environ.get("STRIPE_PUBLISHABLE_KEY", "pk_test_TYooMQauvdEDq54NiTphI7jx"),
                 "isTestMode": test_mode,
                 "testNote": TEST_MODE_NOTE if test_mode else ""
             }
