@@ -1474,6 +1474,13 @@ const SubscriptionCheckout = ({ plan, email, onCancel }) => {
           {plan === 'ranger' && 'UFO Ranger - $30/month'}
         </h3>
         
+        {isTestMode && (
+          <div className="mb-4 p-3 bg-yellow-900/30 border border-yellow-800 rounded-lg text-yellow-200 text-sm">
+            <p className="font-semibold mb-1">⚠️ Demo Mode</p>
+            <p>This is running in test mode. No real payments will be processed.</p>
+          </div>
+        )}
+        
         <p className="text-gray-300 mb-6">
           You're setting up a monthly donation to The Magic Forest. You can cancel anytime from your account.
         </p>
