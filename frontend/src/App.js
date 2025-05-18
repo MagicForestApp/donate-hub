@@ -1353,19 +1353,38 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', onSuccess, onCan
     }
   };
 
+  const isTestMode = process.env.REACT_APP_STRIPE_MODE === 'test';
+
   const paymentElementOptions = {
     layout: 'tabs',
     defaultValues: {
       billingDetails: {
         email: email,
-      }
+        name: isTestMode ? 'Test User' : '',
+        address: isTestMode ? {
+          postalCode: '12345'
+        } : undefined
+      },
+      // Add test card values if in test mode
+      ...(isTestMode && {
+        card: {
+          number: '4242424242424242',
+          cvc: '123',
+          expiry: '04/34'
+        }
+      })
     }
   };
-
+  
   return (
     <form onSubmit={handleSubmit}>
       <div className="mb-6">
         <PaymentElement id="payment-element" options={paymentElementOptions} />
+        {isTestMode && (
+          <div className="mt-2 text-xs text-gray-400 italic">
+            <p>This is a test card. No real payment will be made.</p>
+          </div>
+        )}
       </div>
       
       {errorMessage && (
