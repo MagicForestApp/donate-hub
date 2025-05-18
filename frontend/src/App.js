@@ -859,6 +859,300 @@ const UserAccount = () => {
   );
 };
 
+const ConfirmationPage = () => {
+  const navigate = useNavigate();
+  const [donationDetails, setDonationDetails] = useState(null);
+  const [email, setEmail] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [receiptSent, setReceiptSent] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+  });
+  
+  // Get donation ID from URL params
+  const urlParams = new URLSearchParams(window.location.search);
+  const donationId = urlParams.get('donationId');
+  
+  useEffect(() => {
+    // Fetch donation details
+    const fetchDonationDetails = async () => {
+      try {
+        if (!donationId) {
+          // If no donation ID, redirect to home
+          navigate('/');
+          return;
+        }
+        
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/donations/${donationId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setDonationDetails(data);
+        } else {
+          // If donation not found, use mock data
+          setDonationDetails({
+            id: donationId,
+            amount: 30,
+            type: 'one-time',
+            plan: null,
+            timestamp: new Date().toISOString(),
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching donation details:', error);
+        // If error, use mock data
+        setDonationDetails({
+          id: donationId,
+          amount: 30,
+          type: 'one-time',
+          plan: null,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    };
+    
+    fetchDonationDetails();
+  }, [donationId, navigate]);
+  
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleEmailChange = (e) => {
+    setEmail(e.target.value);
+  };
+  
+  const handleSendReceipt = async (e) => {
+    e.preventDefault();
+    // In a real app, this would send an actual email
+    console.log(`Sending receipt to ${email}`);
+    setReceiptSent(true);
+  };
+  
+  const handleRegistration = async (e) => {
+    e.preventDefault();
+    
+    // In a real app, this would create a user account
+    console.log('Creating user account:', formData);
+    
+    // Navigate to thank-you page to personalize tree
+    navigate(`/thank-you?donationId=${donationId}`);
+  };
+  
+  const handleSkipRegistration = () => {
+    // Navigate to home page or forest map
+    navigate('/');
+  };
+  
+  if (!donationDetails) {
+    return (
+      <div className="min-h-screen bg-night-800 flex items-center justify-center">
+        <div className="p-8 text-center">
+          <div className="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+          <p className="text-xl text-gray-300">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="min-h-screen bg-night-800 py-20">
+      <div className="container mx-auto px-4">
+        <div className="max-w-2xl mx-auto bg-night-700 rounded-xl shadow-xl p-8">
+          <div className="mb-8 text-center">
+            <div className="w-20 h-20 bg-primary-900/50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <BiDonateHeart className="text-primary-300 text-4xl" />
+            </div>
+            <h1 className="text-3xl font-bold mb-3">Thank You for Your Donation!</h1>
+            <p className="text-xl text-gray-300 mb-4">
+              Your contribution helps us create The Magic Forest.
+            </p>
+            
+            <div className="bg-night-600/50 p-4 rounded-lg mt-6 mb-8 mx-auto max-w-md">
+              <h2 className="text-lg font-semibold mb-2">Donation Receipt</h2>
+              <div className="flex justify-between py-2 border-b border-night-500">
+                <span className="text-gray-300">Donation Amount:</span>
+                <span className="font-medium">${donationDetails.amount}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-night-500">
+                <span className="text-gray-300">Donation Type:</span>
+                <span className="font-medium capitalize">
+                  {donationDetails.type === 'recurring' 
+                    ? `${donationDetails.plan} (Monthly)` 
+                    : 'One-time'}
+                </span>
+              </div>
+              <div className="flex justify-between py-2">
+                <span className="text-gray-300">Date:</span>
+                <span className="font-medium">
+                  {new Date(donationDetails.timestamp).toLocaleDateString()}
+                </span>
+              </div>
+              
+              {!receiptSent && (
+                <form onSubmit={handleSendReceipt} className="mt-4">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={handleEmailChange}
+                      placeholder="Enter email for receipt"
+                      className="flex-grow bg-night-800 border border-night-500 rounded-lg p-2 text-white"
+                      required
+                    />
+                    <button
+                      type="submit"
+                      className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg"
+                    >
+                      Send Receipt
+                    </button>
+                  </div>
+                </form>
+              )}
+              
+              {receiptSent && (
+                <div className="mt-4 text-center text-green-400">
+                  Receipt sent to your email!
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {donationDetails.amount >= 10 || donationDetails.type === 'recurring' ? (
+            <div>
+              {!isRegistering ? (
+                <div className="text-center">
+                  <h2 className="text-2xl font-semibold mb-4">Plant Your Tree in The Magic Forest</h2>
+                  <p className="text-gray-300 mb-6">
+                    Your donation of ${donationDetails.amount} qualifies you to plant a tree in our virtual forest! 
+                    Register to personalize your tree and watch it grow over time.
+                  </p>
+                  
+                  <div className="flex flex-col sm:flex-row justify-center gap-4 mb-6">
+                    <button
+                      className="bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-8 rounded-full text-lg"
+                      onClick={() => setIsRegistering(true)}
+                    >
+                      Register & Personalize Tree
+                    </button>
+                    
+                    <button
+                      className="bg-transparent hover:bg-white/10 text-white font-semibold py-3 px-8 rounded-full text-lg border-2 border-white/30"
+                      onClick={handleSkipRegistration}
+                    >
+                      Skip for Now
+                    </button>
+                  </div>
+                  
+                  <p className="text-gray-400 text-sm mt-4">
+                    Registration is optional. You can always come back later to add your tree.
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <h2 className="text-2xl font-semibold mb-4 text-center">Create an Account</h2>
+                  <form onSubmit={handleRegistration}>
+                    <div className="mb-4">
+                      <label className="block text-gray-300 mb-2">Your Name</label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        className="w-full bg-night-800 border border-night-500 rounded-lg p-3 text-white"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="mb-4">
+                      <label className="block text-gray-300 mb-2">Email Address</label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className="w-full bg-night-800 border border-night-500 rounded-lg p-3 text-white"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="mb-6">
+                      <label className="block text-gray-300 mb-2">Password</label>
+                      <input
+                        type="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        className="w-full bg-night-800 border border-night-500 rounded-lg p-3 text-white"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row justify-center gap-4">
+                      <button
+                        type="button"
+                        className="bg-night-600 hover:bg-night-500 text-white font-semibold py-3 px-8 rounded-full text-lg"
+                        onClick={() => setIsRegistering(false)}
+                      >
+                        Go Back
+                      </button>
+                      
+                      <button
+                        type="submit"
+                        className="bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-8 rounded-full text-lg"
+                      >
+                        Register & Continue
+                      </button>
+                    </div>
+                    
+                    <div className="text-center mt-4">
+                      <button
+                        type="button"
+                        className="text-primary-400 hover:text-primary-300"
+                        onClick={() => {
+                          // For demo purposes, we'll just redirect to the tree personalization page
+                          navigate(`/thank-you?donationId=${donationId}`);
+                        }}
+                      >
+                        Continue with Google
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center">
+              <p className="text-gray-300 mb-6">
+                Thank you for your contribution to The Magic Forest!
+                Donations of $10 or more qualify to plant a tree in our virtual forest.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
+                <button
+                  className="bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-8 rounded-full text-lg"
+                  onClick={() => navigate('/donate')}
+                >
+                  Make Another Donation
+                </button>
+                
+                <button
+                  className="bg-transparent hover:bg-white/10 text-white font-semibold py-3 px-8 rounded-full text-lg border-2 border-white/30"
+                  onClick={() => navigate('/')}
+                >
+                  Return Home
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ThankYouPage = () => {
   const navigate = useNavigate();
   const [donationDetails, setDonationDetails] = useState(null);
