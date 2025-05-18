@@ -1600,36 +1600,28 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', clientSecret, on
             </div>
           </button>
           
-          {applePaySupported && (
+          {walletPaymentSupported && walletDetectionComplete && (
             <button
               type="button"
               className={`px-4 py-2 -mb-px text-sm font-medium ${
-                paymentMethod === 'apple_pay' 
+                paymentMethod === 'wallet' 
                   ? 'text-primary-400 border-b-2 border-primary-400' 
                   : 'text-gray-400 hover:text-gray-300'
               }`}
-              onClick={() => setPaymentMethod('apple_pay')}
+              onClick={() => setPaymentMethod('wallet')}
             >
               <div className="flex items-center">
-                <FaApple className="mr-2" />
-                Apple Pay
-              </div>
-            </button>
-          )}
-          
-          {googlePaySupported && (
-            <button
-              type="button"
-              className={`px-4 py-2 -mb-px text-sm font-medium ${
-                paymentMethod === 'google_pay' 
-                  ? 'text-primary-400 border-b-2 border-primary-400' 
-                  : 'text-gray-400 hover:text-gray-300'
-              }`}
-              onClick={() => setPaymentMethod('google_pay')}
-            >
-              <div className="flex items-center">
-                <FaGooglePay className="mr-2" />
-                Google Pay
+                {detectedWalletType === 'apple_pay' ? (
+                  <>
+                    <FaApple className="mr-2" />
+                    Apple Pay
+                  </>
+                ) : (
+                  <>
+                    <FaGooglePay className="mr-2" />
+                    Google Pay
+                  </>
+                )}
               </div>
             </button>
           )}
