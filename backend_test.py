@@ -1,10 +1,10 @@
 
 import requests
 import sys
-import os
+import json
 from datetime import datetime
 
-class StripeIntegrationTester:
+class MagicForestAPITester:
     def __init__(self, base_url="https://6a357df8-fffa-4695-b5a4-2ce00a730b96.preview.emergentagent.com"):
         self.base_url = base_url
         self.tests_run = 0
@@ -12,9 +12,9 @@ class StripeIntegrationTester:
 
     def run_test(self, name, method, endpoint, expected_status, data=None):
         """Run a single API test"""
-        url = f"{self.base_url}/{endpoint}"
+        url = f"{self.base_url}/api/{endpoint}"
         headers = {'Content-Type': 'application/json'}
-
+        
         self.tests_run += 1
         print(f"\n🔍 Testing {name}...")
         
@@ -31,11 +31,12 @@ class StripeIntegrationTester:
                 try:
                     return success, response.json()
                 except:
-                    return success, {"message": "No JSON response"}
+                    return success, {}
             else:
                 print(f"❌ Failed - Expected {expected_status}, got {response.status_code}")
                 try:
-                    print(f"Response: {response.json()}")
+                    error_data = response.json()
+                    print(f"Error: {json.dumps(error_data, indent=2)}")
                 except:
                     print(f"Response: {response.text}")
                 return False, {}
@@ -44,59 +45,88 @@ class StripeIntegrationTester:
             print(f"❌ Failed - Error: {str(e)}")
             return False, {}
 
-    def test_create_payment_intent(self, amount=25):
-        """Test creating a payment intent"""
-        return self.run_test(
+    def test_create_payment_intent(self, amount=25, email="test@example.com"):
+        """Test creating a payment intent for a one-time donation"""
+        success, response = self.run_test(
             "Create Payment Intent",
             "POST",
-            "api/create-payment-intent",
+            "create-payment-intent",
             200,
-            data={"amount": amount}
+            data={"amount": amount, "email": email}
         )
+        
+        if success:
+            print(f"Client Secret: {response.get('clientSecret', 'Not found')[:10]}...")
+            print(f"Test Mode: {response.get('isTestMode', 'Not found')}")
+            print(f"Test Note: {response.get('testNote', 'Not found')[:30]}...")
+        
+        return success, response
 
-    def test_create_checkout_session(self, amount=25):
-        """Test creating a checkout session"""
-        return self.run_test(
-            "Create Checkout Session",
+    def test_create_donation(self, amount=25, email="test@example.com", session_id="test_session_123"):
+        """Test creating a donation record"""
+        success, response = self.run_test(
+            "Create Donation",
             "POST",
-            "api/create-checkout-session",
+            "donations",
             200,
-            data={"amount": amount}
+            data={
+                "type": "one-time",
+                "amount": amount,
+                "email": email,
+                "payment_status": "succeeded",
+                "session_id": session_id
+            }
         )
+        
+        if success:
+            print(f"Donation ID: {response.get('id', 'Not found')}")
+        
+        return success, response
 
-    def test_create_subscription(self, plan_id="tree_guardian"):
-        """Test creating a subscription"""
-        return self.run_test(
+    def test_create_subscription(self, plan="seedling", email="test@example.com"):
+        """Test creating a subscription checkout session"""
+        success, response = self.run_test(
             "Create Subscription",
             "POST",
-            "api/create-subscription",
+            "create-subscription",
             200,
-            data={"plan": plan_id}
+            data={"plan": plan, "email": email}
         )
+        
+        if success:
+            print(f"Session URL: {response.get('url', 'Not found')[:30]}...")
+        
+        return success, response
 
 def main():
-    print(f"Testing Stripe Integration at: {os.environ.get('REACT_APP_BACKEND_URL', 'https://6a357df8-fffa-4695-b5a4-2ce00a730b96.preview.emergentagent.com')}\n")
-    
     # Setup
-    tester = StripeIntegrationTester()
+    tester = MagicForestAPITester()
+    test_email = f"test_{datetime.now().strftime('%H%M%S')}@example.com"
     
-    # Test payment intent creation
-    tester.test_create_payment_intent()
+    # Run tests
+    print(f"Testing Stripe Integration at: {tester.base_url}")
     
-    # Test checkout session creation
-    tester.test_create_checkout_session()
+    # Test creating a payment intent
+    payment_intent_success, payment_intent_data = tester.test_create_payment_intent(
+        amount=25,
+        email=test_email
+    )
     
-    # Test subscription creation
-    tester.test_create_subscription()
+    # Test creating a donation
+    donation_success, donation_data = tester.test_create_donation(
+        amount=25,
+        email=test_email,
+        session_id=f"test_session_{datetime.now().strftime('%H%M%S')}"
+    )
+    
+    # Test creating a subscription
+    subscription_success, subscription_data = tester.test_create_subscription(
+        plan="seedling",
+        email=test_email
+    )
     
     # Print results
     print(f"\n📊 Tests passed: {tester.tests_passed}/{tester.tests_run}")
-    
-    if tester.tests_passed < tester.tests_run:
-        print("\n⚠️ Some Stripe tests failed. This may indicate an issue with the Stripe API key.")
-        print("   Check that the STRIPE_SECRET_KEY environment variable is set correctly.")
-        print("   The key should be a valid Stripe API key starting with 'sk_test_' or 'sk_live_'.")
-    
     return 0 if tester.tests_passed == tester.tests_run else 1
 
 if __name__ == "__main__":
