@@ -443,7 +443,12 @@ const ForestMap = () => {
           const data = await response.json();
           console.log('Trees from API:', data);
           if (data && data.length > 0) {
-            setTrees(data);
+            // Make sure each tree has a size property
+            const processedTrees = data.map(tree => ({
+              ...tree,
+              size: tree.size || Math.random() * 0.5 + 0.7 // Add default size if missing
+            }));
+            setTrees(processedTrees);
           } else {
             console.log('No trees found, using mock data');
             setTrees(getMockTrees());
