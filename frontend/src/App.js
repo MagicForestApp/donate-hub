@@ -1371,6 +1371,7 @@ const CheckoutForm = ({ amount, donationType, plan, email = '', clientSecret, on
         requestPayerEmail: true,
         requestPayerPhone: false,
         requestShipping: false,
+        disableWallets: ['link'] // Explicitly disable Link wallet
       });
       
       // Check if wallet payment is supported
