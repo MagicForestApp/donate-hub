@@ -219,28 +219,49 @@ async def create_tree_endpoint(tree: TreeCreate):
 async def create_payment_intent(data: Dict[str, Any] = Body(...)):
     try:
         amount = int(data["amount"] * 100)  # Convert to cents
+        email = data.get("email", "")
+        test_mode = STRIPE_MODE == "test"
+        
         metadata = {
             "donation_type": "one-time",
-            "customer_email": data.get("email", ""),
-            "application": "magic_forest"
+            "customer_email": email,
+            "application": "magic_forest",
+            "test_mode": str(test_mode)
         }
         
         # Create a PaymentIntent with the order amount and currency
-        intent = stripe.PaymentIntent.create(
-            amount=amount,
-            currency="usd",
-            metadata=metadata,
-            automatic_payment_methods={
-                "enabled": True,
-            },
-            description="Magic Forest Donation",
-        )
-        
-        return {
-            "clientSecret": intent["client_secret"],
-            "publishableKey": os.environ.get("STRIPE_PUBLISHABLE_KEY"),
-            "isTestMode": STRIPE_MODE == "test"
-        }
+        try:
+            intent = stripe.PaymentIntent.create(
+                amount=amount,
+                currency="usd",
+                metadata=metadata,
+                receipt_email=email if email else None,
+                automatic_payment_methods={
+                    "enabled": True,
+                },
+                description="Magic Forest Donation",
+            )
+            
+            return {
+                "clientSecret": intent["client_secret"],
+                "publishableKey": os.environ.get("STRIPE_PUBLISHABLE_KEY"),
+                "isTestMode": test_mode,
+                "testNote": TEST_MODE_NOTE if test_mode else ""
+            }
+        except stripe.error.StripeError as e:
+            # Handle Stripe errors gracefully in test mode
+            if test_mode:
+                # Generate a fake client secret for testing
+                fake_client_secret = f"pi_test_{uuid.uuid4().hex}_secret_{uuid.uuid4().hex}"
+                return {
+                    "clientSecret": fake_client_secret,
+                    "publishableKey": os.environ.get("STRIPE_PUBLISHABLE_KEY"),
+                    "isTestMode": True,
+                    "testNote": "Using simulated payment in test mode - no charges will be made",
+                    "error": str(e)
+                }
+            else:
+                raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
