@@ -596,7 +596,7 @@ const ForestMap = () => {
             >
               ✕
             </button>
-            <h3 className="font-semibold text-lg">{selectedTree.donor}'s {selectedTree.type.charAt(0).toUpperCase() + selectedTree.type.slice(1)}</h3>
+            <h3 className="font-semibold text-lg">{selectedTree.donor}&apos;s {selectedTree.type.charAt(0).toUpperCase() + selectedTree.type.slice(1)}</h3>
             <p className="text-gray-300 mt-2">{selectedTree.message}</p>
             <div className="mt-3 pt-3 border-t border-night-600 text-sm text-gray-400">
               Planted on {new Date().toLocaleDateString()}
